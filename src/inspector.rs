@@ -79,6 +79,7 @@ pub(crate) struct IndexInspector {
 impl Debug for IndexInspector {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         let node_size = Node::serialized_size();
+        // REVIEW: level # is reversed from the teriminology we use in PackedRTree. What's typical? Is the root level 0 or is the feature row level 0?
         for (level, level_byte_range) in self.tree.byte_ranges_by_level().into_iter().enumerate() {
             writeln!(
                 f,

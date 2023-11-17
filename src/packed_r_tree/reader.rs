@@ -102,6 +102,7 @@ pub(crate) mod http {
         }
 
         pub async fn select_bbox(&mut self, bbox: &Bounds) -> Result<Vec<FeatureLocation>> {
+            trace!("select_bbox {bbox:?}");
             if self.tree.num_leaf_nodes == 0 {
                 return Ok(vec![]);
             }
@@ -111,6 +112,8 @@ pub(crate) mod http {
             queue.push_back(0..1);
 
             while let Some(node_range) = queue.pop_front() {
+                let level = self.tree.level_for_node_idx(node_range.start);
+                trace!("next node_range {node_range:?} (level {level})");
                 // REVIEW: why return node_idx? Can't we infer it from node_range?
                 for (node_idx, node) in self.read_node_range(node_range).await? {
                     if !node.bounds.intersects(bbox) {
@@ -119,7 +122,47 @@ pub(crate) mod http {
                     if self.tree.is_leaf_node(node_idx) {
                         results.push(node.offset);
                     } else if let Some(children) = self.tree.children_range(node_idx) {
-                        // TODO: merge
+                        let Some(tail) = queue.back_mut() else {
+                            let level = self.tree.level_for_node_idx(children.start);
+                            debug!(
+                                "pushing children onto empty queue: {children:?} (level {level})"
+                            );
+                            queue.push_back(children);
+                            continue;
+                        };
+
+                        let tail_level = self.tree.level_for_node_idx(tail.start);
+                        debug_assert_eq!(tail_level, self.tree.level_for_node_idx(tail.end));
+
+                        let children_level = self.tree.level_for_node_idx(children.start);
+                        debug_assert_eq!(
+                            children_level,
+                            self.tree.level_for_node_idx(children.end)
+                        );
+
+                        if tail_level != children_level {
+                            debug!("pushing new level {children_level} for children: {children:?}, since queue tail has level {tail_level}");
+                            queue.push_back(children);
+                            continue;
+                        }
+
+                        // TODO: do something less arbitrary
+                        let combine_request_threshold = 16_000;
+                        let combine_request_node_threshold =
+                            combine_request_threshold / Node::serialized_size();
+                        if tail.end + combine_request_node_threshold as u64 > children.start {
+                            debug!("merging children: {children:?} with nearby existing range {tail:?}");
+                            debug_assert!(
+                                children.start >= tail.end,
+                                "Failed: {} > {}",
+                                children.start,
+                                tail.end
+                            );
+                            tail.end = children.end;
+                            continue;
+                        }
+
+                        debug!("pushing new node {children:?} range rather than merging with distance node range {tail:?}");
                         queue.push_back(children);
                     }
                 }

@@ -133,6 +133,18 @@ impl PackedRTree {
         Some(children_start..min(children_start + BRANCHING_FACTOR, child_level.end))
     }
 
+    fn level_for_node_idx(&self, node_idx: u64) -> usize {
+        debug_assert!(node_idx < self.node_count());
+        let mut levels = self.node_ranges_by_level();
+        levels.reverse();
+        levels
+            .iter()
+            .enumerate()
+            .find(|(level, range)| range.contains(&node_idx))
+            .expect("already verified node_idx was within *some* node range")
+            .0
+    }
+
     fn is_leaf_node(&self, node_idx: u64) -> bool {
         let levels = self.node_ranges_by_level();
         let Some(features) = levels.last() else {
@@ -214,6 +226,16 @@ mod tests {
         assert_eq!(16 + 1, PackedRTree::new(16).node_count());
         assert_eq!(256 + 16 + 1, PackedRTree::new(256).node_count());
         assert_eq!(257 + 17 + 2 + 1, PackedRTree::new(257).node_count());
+    }
+
+    #[test]
+    fn level_for_node_idx() {
+        let tree = PackedRTree::new(250);
+        assert_eq!(tree.level_for_node_idx(17), 0);
+        assert_eq!(tree.level_for_node_idx(266), 0);
+        assert_eq!(tree.level_for_node_idx(16), 1);
+        assert_eq!(tree.level_for_node_idx(1), 1);
+        assert_eq!(tree.level_for_node_idx(0), 2);
     }
 
     mod children_range {

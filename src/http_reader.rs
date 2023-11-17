@@ -1,5 +1,5 @@
 use crate::feature::Feature;
-use crate::packed_r_tree::{PackedRTree, PackedRTreeHttpReader};
+use crate::packed_r_tree::{Node, PackedRTree, PackedRTreeHttpReader};
 use crate::writer::{FeatureLocation, PageHeader};
 use crate::{deserialize_from, serialized_size, Bounds, Header, Result};
 use async_compression::tokio::bufread::ZstdDecoder;
@@ -31,8 +31,17 @@ impl HttpReader {
     async fn new(mut http_client: HttpClient) -> Result<Self> {
         trace!("starting: opening http reader, reading header");
 
-        // TODO: overfetch to get first part of index
-        http_client.set_range(0..Self::header_size()).await?;
+        // TODO: Figure out how big this should be
+        fn estimate_index_size(levels: u32) -> usize {
+            let nodes: usize = (0..levels).map(|level| 16usize.pow(level)).sum();
+            nodes * Node::serialized_size()
+        }
+
+        // let overfetch_by = estimate_index_size(3) as u64;
+        let overfetch_by = 0;
+        http_client
+            .set_range(0..(Self::header_size() + overfetch_by))
+            .await?;
         let mut header_bytes = vec![0u8; Self::header_size() as usize];
 
         http_client.read_exact(&mut header_bytes).await?;
@@ -43,6 +52,7 @@ impl HttpReader {
         })
     }
 
+    // TODO: usize?
     fn header_size() -> u64 {
         let header = Header::default();
         serialized_size(&header)
@@ -553,7 +563,7 @@ impl Stream for FeatureStream<'_> {
 mod test {
     use super::*;
     use crate::feature::PropertyValue;
-    use crate::{ensure_logging, wkt, Geometry};
+    use crate::{ensure_logging, wkt, Geometry, LngLat};
 
     #[tokio::test]
     async fn select_all_uncompressed() {
@@ -628,5 +638,24 @@ mod test {
         let remainder: Vec<_> = stream.collect().await;
         let remainder: Vec<Feature> = remainder.into_iter().collect::<Result<Vec<_>>>().unwrap();
         assert_eq!(remainder.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn bbox_larger_file() {
+        ensure_logging();
+
+        let bytes = std::fs::read("test_fixtures/USCounties-compressed.geomedea").unwrap();
+        let mut reader = HttpReader::test_reader(&bytes).await.unwrap();
+        let bounds =
+            Bounds::from_corners(&LngLat::degrees(-86.0, 10.0), &LngLat::degrees(-85.0, 40.0));
+        let mut features = reader.select_bbox(&bounds).await.unwrap();
+        let mut count = 0;
+        while let Some(feature) = features.next().await.transpose().unwrap() {
+            let Geometry::MultiPolygon(_multi_polygon) = feature.geometry() else {
+                panic!("expected MultiPolygon, got {:?}", feature.geometry());
+            };
+            count += 1;
+        }
+        assert_eq!(count, 140);
     }
 }

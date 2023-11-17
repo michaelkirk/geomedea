@@ -38,8 +38,8 @@ fn benchmark(c: &mut Criterion) {
     let test_server_port = 6868;
     let server = ThrottledServer::new(
         test_server_port,
-        Duration::from_millis(100),
-        50_000_000 / 8,
+        Duration::from_millis(10),
+        500_000_000 / 8,
         "./test_fixtures",
     );
     let runtime = tokio::runtime::Runtime::new().unwrap();

@@ -140,7 +140,7 @@ impl PackedRTree {
         levels
             .iter()
             .enumerate()
-            .find(|(level, range)| range.contains(&node_idx))
+            .find(|(_level, range)| range.contains(&node_idx))
             .expect("already verified node_idx was within *some* node range")
             .0
     }

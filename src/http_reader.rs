@@ -37,8 +37,7 @@ impl HttpReader {
             nodes * Node::serialized_size()
         }
 
-        // let overfetch_by = estimate_index_size(3) as u64;
-        let overfetch_by = 0;
+        let overfetch_by = estimate_index_size(3) as u64;
         http_client
             .set_range(0..(Self::header_size() + overfetch_by))
             .await?;

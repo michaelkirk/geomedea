@@ -38,7 +38,6 @@ impl PackedRTreeWriter {
         Ok(())
     }
 
-    // Returns index size
     pub fn write<W: Write>(mut self, mut writer: W) -> Result<()> {
         if self.features_added != self.tree.num_leaf_nodes {
             return Err(Error::FeatureCountMismatch {

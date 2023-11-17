@@ -151,7 +151,7 @@ pub(crate) mod http {
                         let combine_request_node_threshold =
                             combine_request_threshold / Node::serialized_size();
                         if tail.end + combine_request_node_threshold as u64 > children.start {
-                            debug!("merging children: {children:?} with nearby existing range {tail:?}");
+                            trace!("merging children: {children:?} with nearby existing range {tail:?}");
                             debug_assert!(
                                 children.start >= tail.end,
                                 "Failed: {} > {}",

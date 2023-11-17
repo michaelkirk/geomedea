@@ -303,6 +303,9 @@ impl AsyncPageReader {
         feature_start: u64,
         location: FeatureLocation,
     ) -> Result<()> {
+        // TODO be smarter about this.
+        let overfetch = 512_000;
+
         // First get to the right page.
         let (mut page_decoder, page_starting_offset) = match self
             .current_page
@@ -316,19 +319,31 @@ impl AsyncPageReader {
                 debug!("first content read - we haven't started any page yet.");
                 let mut http_client: HttpClient = page_decoder.into_inner();
                 let page_header_start = feature_start + location.page_starting_offset;
+
+                debug!("page_header overfetch: {overfetch:?}");
                 let page_header_end = page_header_start + PageHeader::serialized_size() as u64;
-                http_client
-                    .seek_to_range(HttpRange::Range(page_header_start..page_header_end))
-                    .await?;
+                let page_header_range = HttpRange::Range(page_header_start..page_header_end);
+                if http_client.contains(&page_header_range) {
+                    http_client.seek_to_range(page_header_range).await?;
+                } else {
+                    let page_header_range = HttpRange::Range(page_header_start..page_header_end + overfetch);
+                    http_client.seek_to_range(page_header_range).await?;
+                }
 
                 let mut bytes = vec![0; PageHeader::serialized_size()];
                 http_client.read_exact(&mut bytes).await?;
                 let page_header: PageHeader = deserialize_from(&*bytes)?;
 
                 let page_content_end = page_header_end + page_header.encoded_page_length() as u64;
-                http_client
-                    .seek_to_range(page_header_end..page_content_end)
-                    .await?;
+                let page_content_range = HttpRange::Range(page_header_end..page_content_end);
+                if http_client.contains(&page_content_range) {
+                    http_client
+                        .seek_to_range(page_content_range)
+                        .await?;
+                } else {
+                    let page_content_range = HttpRange::Range(page_header_end..page_content_end + overfetch);
+                    http_client.seek_to_range(page_content_range).await?;
+                }
                 (
                     new_page_decoder(
                         http_client.take(page_header.encoded_page_length() as u64),
@@ -342,7 +357,7 @@ impl AsyncPageReader {
                 page_decoder,
                 page_starting_offset: Some(page_starting_offset),
             } if page_starting_offset == location.page_starting_offset => {
-                debug!("We've already started reading into the correct page.");
+                trace!("We've already started reading into the correct page.");
                 (page_decoder, page_starting_offset)
             }
             CurrentPage {
@@ -359,18 +374,29 @@ impl AsyncPageReader {
                 let mut http_client: HttpClient = page_decoder.into_inner();
                 let page_header_start = feature_start + location.page_starting_offset;
                 let page_header_end = page_header_start + PageHeader::serialized_size() as u64;
-                http_client
-                    .seek_to_range(HttpRange::Range(page_header_start..page_header_end))
-                    .await?;
+
+                let page_header_range = HttpRange::Range(page_header_start..page_header_end);
+                if http_client.contains(&page_header_range) {
+                    http_client.seek_to_range(page_header_range).await?;
+                } else {
+                    let page_header_range = HttpRange::Range(page_header_start..page_header_end + overfetch);
+                    http_client.seek_to_range(page_header_range).await?;
+                }
 
                 let mut bytes = vec![0; PageHeader::serialized_size()];
                 http_client.read_exact(&mut bytes).await?;
                 let page_header: PageHeader = deserialize_from(&*bytes)?;
 
                 let page_content_end = page_header_end + page_header.encoded_page_length() as u64;
-                http_client
-                    .seek_to_range(page_header_end..page_content_end)
-                    .await?;
+                let page_content_range = HttpRange::Range(page_header_end..page_content_end);
+                if http_client.contains(&page_content_range) {
+                    http_client
+                        .seek_to_range(page_content_range)
+                        .await?;
+                } else {
+                    let page_content_range = HttpRange::Range(page_header_end..page_content_end + overfetch);
+                    http_client.seek_to_range(page_content_range).await?;
+                }
                 (
                     new_page_decoder(
                         http_client.take(page_header.encoded_page_length() as u64),
@@ -541,7 +567,7 @@ impl<'a> FeatureStream<'a> {
     fn new(stream: impl Stream<Item = Result<Bytes>> + Unpin + 'a) -> Self {
         let inner = stream.map(move |feature_buffer| {
             let feature = deserialize_from::<_, Feature>(feature_buffer?.as_slice())?;
-            debug!("yielding feature: {feature:?}");
+            trace!("yielding feature: {feature:?}");
             Ok(feature)
         });
         Self {

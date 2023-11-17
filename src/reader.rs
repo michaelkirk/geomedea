@@ -85,7 +85,7 @@ impl<'r, R: Read + 'r> PageReader<'r, R> {
                 page_decoder,
                 page_starting_offset,
             } if page_starting_offset == location.page_starting_offset => {
-                debug!("We've already started reading into the correct page.");
+                trace!("We've already started reading into the correct page.");
                 (page_decoder, page_starting_offset)
             }
             CurrentPage {

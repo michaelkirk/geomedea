@@ -326,7 +326,8 @@ impl AsyncPageReader {
                 if http_client.contains(&page_header_range) {
                     http_client.seek_to_range(page_header_range).await?;
                 } else {
-                    let page_header_range = HttpRange::Range(page_header_start..page_header_end + overfetch);
+                    let page_header_range =
+                        HttpRange::Range(page_header_start..page_header_end + overfetch);
                     http_client.seek_to_range(page_header_range).await?;
                 }
 
@@ -337,11 +338,10 @@ impl AsyncPageReader {
                 let page_content_end = page_header_end + page_header.encoded_page_length() as u64;
                 let page_content_range = HttpRange::Range(page_header_end..page_content_end);
                 if http_client.contains(&page_content_range) {
-                    http_client
-                        .seek_to_range(page_content_range)
-                        .await?;
+                    http_client.seek_to_range(page_content_range).await?;
                 } else {
-                    let page_content_range = HttpRange::Range(page_header_end..page_content_end + overfetch);
+                    let page_content_range =
+                        HttpRange::Range(page_header_end..page_content_end + overfetch);
                     http_client.seek_to_range(page_content_range).await?;
                 }
                 (
@@ -379,7 +379,8 @@ impl AsyncPageReader {
                 if http_client.contains(&page_header_range) {
                     http_client.seek_to_range(page_header_range).await?;
                 } else {
-                    let page_header_range = HttpRange::Range(page_header_start..page_header_end + overfetch);
+                    let page_header_range =
+                        HttpRange::Range(page_header_start..page_header_end + overfetch);
                     http_client.seek_to_range(page_header_range).await?;
                 }
 
@@ -390,11 +391,10 @@ impl AsyncPageReader {
                 let page_content_end = page_header_end + page_header.encoded_page_length() as u64;
                 let page_content_range = HttpRange::Range(page_header_end..page_content_end);
                 if http_client.contains(&page_content_range) {
-                    http_client
-                        .seek_to_range(page_content_range)
-                        .await?;
+                    http_client.seek_to_range(page_content_range).await?;
                 } else {
-                    let page_content_range = HttpRange::Range(page_header_end..page_content_end + overfetch);
+                    let page_content_range =
+                        HttpRange::Range(page_header_end..page_content_end + overfetch);
                     http_client.seek_to_range(page_content_range).await?;
                 }
                 (
@@ -669,7 +669,7 @@ mod test {
     async fn bbox_larger_file() {
         ensure_logging();
 
-        let bytes = std::fs::read("test_fixtures/USCounties-compressed.geomedea").unwrap();
+        let bytes = std::fs::read("../test_fixtures/USCounties-compressed.geomedea").unwrap();
         let mut reader = HttpReader::test_reader(&bytes).await.unwrap();
         let bounds =
             Bounds::from_corners(&LngLat::degrees(-86.0, 10.0), &LngLat::degrees(-85.0, 40.0));

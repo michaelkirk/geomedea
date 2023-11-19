@@ -40,7 +40,7 @@ fn benchmark(c: &mut Criterion) {
         test_server_port,
         Duration::from_millis(10),
         500_000_000 / 8,
-        "./test_fixtures",
+        "../test_fixtures",
     );
     let runtime = tokio::runtime::Runtime::new().unwrap();
     runtime.spawn(async move {

@@ -1,0 +1,18 @@
+[package]
+name = "geomedea_geozero"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+futures-util = "0.3.29"
+geomedea = { path = "../geomedea" }
+geozero = { workspace = true }
+log = "0.4.20"
+
+[dev-dependencies]
+approx = "0.5.1"
+serde_json = "1.0.108"
+
+

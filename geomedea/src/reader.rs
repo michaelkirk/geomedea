@@ -263,6 +263,7 @@ impl<'r, R: Read + 'r> PageDecoder<'r, R> for UncompressedPageDecoder<R> {
     }
 }
 
+#[derive(Debug)]
 pub struct Reader<'r, R: Read + 'r> {
     inner: R,
     header: Header,

@@ -35,7 +35,8 @@ approx = "0.5.1"
 env_logger = "0.10.0"
 criterion = { version = "0.5.1", features = ["async_tokio"] }
 tokio = { version = "1.34.0", default-features = true, features = ["full"] }
-yocalhost = "0.4.0"
+# yocalhost = "0.4.0"
+yocalhost = { path = "../../yocalhost" }
 
 [[bench]]
 name = "write_from_geojson"

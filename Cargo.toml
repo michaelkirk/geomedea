@@ -7,5 +7,6 @@ members = [
 ]
 
 [workspace.dependencies]
-geozero = { git = "https://github.com/michaelkirk/geozero", branch = "mkirk/update-fgb" }
+# geozero = { git = "https://github.com/michaelkirk/geozero", branch = "mkirk/update-fgb" }
+geozero = { path = "../geozero/geozero" }
 

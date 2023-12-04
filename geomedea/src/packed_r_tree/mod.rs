@@ -3,6 +3,7 @@ mod writer;
 
 pub use reader::http::PackedRTreeHttpReader;
 pub use reader::PackedRTreeReader;
+use std::cell::OnceCell;
 pub use writer::PackedRTreeWriter;
 
 use crate::writer::FeatureLocation;
@@ -53,11 +54,15 @@ impl Node {
 
 pub struct PackedRTree {
     num_leaf_nodes: u64,
+    node_ranges_by_level: OnceCell<Vec<Range<u64>>>,
 }
 
 impl PackedRTree {
     pub(crate) fn new(num_leaf_nodes: u64) -> Self {
-        Self { num_leaf_nodes }
+        Self {
+            num_leaf_nodes,
+            node_ranges_by_level: OnceCell::new(),
+        }
     }
 
     pub fn index_size(&self) -> u64 {
@@ -100,8 +105,14 @@ impl PackedRTree {
             .collect::<Vec<_>>()
     }
 
+    /// PERF: This is a hot one. Cache it?
     /// The range of nodes belonging to each level (in _nodes_, not bytes)
-    pub fn node_ranges_by_level(&self) -> Vec<Range<u64>> {
+    pub fn node_ranges_by_level(&self) -> &[Range<u64>] {
+        self.node_ranges_by_level
+            .get_or_init(|| self._node_ranges_by_level())
+    }
+
+    pub fn _node_ranges_by_level(&self) -> Vec<Range<u64>> {
         let levels = self.nodes_per_level();
         let mut total_offset = 0;
         let mut offsets = vec![];
@@ -135,14 +146,20 @@ impl PackedRTree {
 
     fn level_for_node_idx(&self, node_idx: u64) -> usize {
         debug_assert!(node_idx < self.node_count());
-        let mut levels = self.node_ranges_by_level();
-        levels.reverse();
-        levels
+        let levels = self.node_ranges_by_level();
+        let level_idx = levels
             .iter()
             .enumerate()
             .find(|(_level, range)| range.contains(&node_idx))
             .expect("already verified node_idx was within *some* node range")
-            .0
+            .0;
+
+        debug_assert!(
+            levels.len() > 0,
+            "already verified node_idx was within *some* node range, thus the tree is non-empty"
+        );
+        let level = levels.len() - 1 - level_idx;
+        level
     }
 
     fn is_leaf_node(&self, node_idx: u64) -> bool {

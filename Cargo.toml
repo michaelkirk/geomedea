@@ -7,6 +7,7 @@ members = [
 ]
 
 [workspace.dependencies]
-# geozero = { git = "https://github.com/michaelkirk/geozero", branch = "mkirk/update-fgb" }
-geozero = { path = "../geozero/geozero" }
+# Waiting for release
+geozero = { git = "https://github.com/georust/geozero", commit = "8501fedf288adc851d08a367f8f651ee643d4bed" }
+# geozero = { path = "../geozero/geozero" }
 

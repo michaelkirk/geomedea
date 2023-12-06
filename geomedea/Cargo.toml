@@ -2,6 +2,9 @@
 name = "geomedea"
 version = "0.1.0"
 edition = "2021"
+description = "a geospatial data format optimized for remotely accessing a subset of planet-wide data"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/michaelkirk/geomedea"
 
 [[bin]]
 name = "info"

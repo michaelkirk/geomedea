@@ -33,7 +33,7 @@ impl<R: Read> GeozeroDatasource for GeozeroFeatureIter<'_, R> {
         let mut feature_idx = 0;
         while let Some(feature) = self
             .0
-            .next()
+            .try_next()
             .map_err(|e| GeozeroError::Feature(e.to_string()))?
         {
             processing::process_feature(processor, feature_idx, feature)?;

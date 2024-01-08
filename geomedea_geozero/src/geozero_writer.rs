@@ -681,7 +681,7 @@ mod tests {
 
         let reader = Reader::new(output.as_slice()).unwrap();
         let mut features = reader.select_all().unwrap();
-        let first = features.next().unwrap().unwrap();
+        let first = features.try_next().unwrap().unwrap();
         let Geometry::Point(lnglat) = first.geometry() else {
             panic!("unexpected geometry");
         };
@@ -717,7 +717,7 @@ mod tests {
 
         let reader = Reader::new(output.as_slice()).unwrap();
         let mut features = reader.select_all().unwrap();
-        let first = features.next().unwrap().unwrap();
+        let first = features.try_next().unwrap().unwrap();
         let Geometry::Point(lnglat) = first.geometry() else {
             panic!("unexpected geometry");
         };
@@ -756,7 +756,7 @@ mod tests {
             &LngLat::degrees(24.5, -3.5),
         );
         let mut features = reader.select_bbox(&bounds).unwrap();
-        let first = features.next().unwrap().unwrap();
+        let first = features.try_next().unwrap().unwrap();
         let Geometry::Polygon(_polygon) = first.geometry() else {
             panic!("unexpected polygon geometry: {first:?}");
         };

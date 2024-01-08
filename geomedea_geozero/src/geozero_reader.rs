@@ -87,7 +87,7 @@ mod processing {
             }
             Geometry::MultiPoint(multi_point) => {
                 processor.multipoint_begin(multi_point.points().len(), geometry_idx)?;
-                for (_point_idx, point) in multi_point.points().iter().enumerate() {
+                for point in multi_point.points().iter() {
                     // Apparently calling point_begin for each point breaks GeoJsonWriter
                     // That might be a bug - It seems like point_begin should take "tagged" like
                     // all other multi/element types

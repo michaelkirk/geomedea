@@ -98,7 +98,7 @@ impl PackedRTree {
     pub fn byte_ranges_by_level(&self) -> Vec<Range<usize>> {
         let node_size = Node::serialized_size();
         self.node_ranges_by_level()
-            .into_iter()
+            .iter()
             .map(|node_range| {
                 (node_size * node_range.start as usize)..(node_size * node_range.end as usize)
             })
@@ -155,11 +155,10 @@ impl PackedRTree {
             .0;
 
         debug_assert!(
-            levels.len() > 0,
+            !levels.is_empty(),
             "already verified node_idx was within *some* node range, thus the tree is non-empty"
         );
-        let level = levels.len() - 1 - level_idx;
-        level
+        levels.len() - 1 - level_idx
     }
 
     fn is_leaf_node(&self, node_idx: u64) -> bool {

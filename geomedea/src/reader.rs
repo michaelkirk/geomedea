@@ -367,7 +367,7 @@ pub struct FeatureIter<'r, R: Read> {
 }
 
 impl<R: Read> FeatureIter<'_, R> {
-    pub fn next(&mut self) -> Result<Option<Feature>> {
+    pub fn try_next(&mut self) -> Result<Option<Feature>> {
         if self.features_left == 0 {
             return Ok(None);
         }
@@ -428,7 +428,7 @@ mod tests {
         let mut feature_iter = reader.select_all().unwrap();
 
         let mut geometries = vec![];
-        while let Some(feature) = feature_iter.next().unwrap() {
+        while let Some(feature) = feature_iter.try_next().unwrap() {
             geometries.push(feature.geometry().clone());
         }
 
@@ -475,13 +475,13 @@ mod tests {
         let bounds = wkt!(RECT(1 1,2 2));
         let mut features = reader.select_bbox(&bounds).unwrap();
         assert_eq!(
-            features.next().unwrap().unwrap().geometry(),
+            features.try_next().unwrap().unwrap().geometry(),
             &wkt!(POINT(2 2)).into()
         );
         assert_eq!(
-            features.next().unwrap().unwrap().geometry(),
+            features.try_next().unwrap().unwrap().geometry(),
             &wkt!(POINT(1 1)).into()
         );
-        assert!(features.next().unwrap().is_none());
+        assert!(features.try_next().unwrap().is_none());
     }
 }

@@ -19,7 +19,7 @@ fn select_all(bytes: &[u8]) {
     let reader = Reader::new(bytes).unwrap();
     let mut features = reader.select_all().unwrap();
     let mut count = 0;
-    while let Some(feature) = features.next().unwrap() {
+    while let Some(feature) = features.try_next().unwrap() {
         black_box(feature);
         count += 1;
     }
@@ -35,7 +35,7 @@ fn select_bbox(bytes: &[u8]) {
         ))
         .unwrap();
     let mut count = 0;
-    while let Some(_feature) = features.next().unwrap() {
+    while let Some(_feature) = features.try_next().unwrap() {
         black_box(_feature);
         count += 1;
     }

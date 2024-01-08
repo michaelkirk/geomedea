@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 use geomedea_geozero::GeomedeaWriter as GeozeroWriter;
-use geozero::{geojson::GeoJsonReader, GeozeroDatasource};
+use geomedea_geozero::geozero::{geojson::GeoJsonReader, GeozeroDatasource};
 use std::fs::File;
 use std::io::BufReader;
 

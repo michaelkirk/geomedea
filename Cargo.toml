@@ -6,12 +6,3 @@ members = [
   "geomedea_geozero"
 ]
 
-[workspace.dependencies]
-geozero = "0.11.0"
-# geozero = { path = "../geozero/geozero" }
-
-# Waiting for release
-[patch.crates-io]
-geozero = { git = "https://github.com/georust/geozero", rev = "8501fedf288adc851d08a367f8f651ee643d4bed" }
-
-

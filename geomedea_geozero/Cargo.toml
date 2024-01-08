@@ -7,9 +7,9 @@ edition = "2021"
 
 [dependencies]
 futures-util = "0.3.29"
-geomedea = { path = "../geomedea" }
+geomedea = { version = "0.2.0", path = "../geomedea" }
 # Waiting for release
-geozero = { git = "https://github.com/georust/geozero", rev = "8501fedf288adc851d08a367f8f651ee643d4bed" }
+geozero = '*'
 log = "0.4.20"
 
 [dev-dependencies]

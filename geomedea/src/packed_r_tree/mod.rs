@@ -145,7 +145,7 @@ impl PackedRTree {
     }
 
     fn level_for_node_idx(&self, node_idx: u64) -> usize {
-        debug_assert!(node_idx < self.node_count());
+        debug_assert!(node_idx < self.node_count(), "requested level for node #{node_idx} when there are only {} nodes", self.node_count());
         let levels = self.node_ranges_by_level();
         let level_idx = levels
             .iter()

@@ -137,7 +137,7 @@ pub(crate) mod http {
                         let children_level = self.tree.level_for_node_idx(children.start);
                         debug_assert_eq!(
                             children_level,
-                            self.tree.level_for_node_idx(children.end)
+                            self.tree.level_for_node_idx(children.end - 1)
                         );
 
                         if tail_level != children_level {

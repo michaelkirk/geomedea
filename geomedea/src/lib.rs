@@ -113,7 +113,7 @@ mod tests {
         assert_eq!(output.len(), 29);
 
         let reader = Reader::new(output.as_slice()).unwrap();
-        assert!(reader.select_all().unwrap().next().unwrap().is_none());
+        assert!(reader.select_all().unwrap().try_next().unwrap().is_none());
     }
 
     #[test]
@@ -130,12 +130,12 @@ mod tests {
 
         let reader = Reader::new(output.as_slice()).unwrap();
         let mut features = reader.select_all().unwrap();
-        let feature = features.next().unwrap().unwrap();
+        let feature = features.try_next().unwrap().unwrap();
         assert_eq!(
             feature.geometry(),
             &Geometry::Point(LngLat::degrees(1.0, 2.0))
         );
-        assert!(features.next().unwrap().is_none());
+        assert!(features.try_next().unwrap().is_none());
     }
 
     #[test]

@@ -12,7 +12,7 @@ impl Debug for Bounds {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "RECT({} {}, {} {})",
+            "RECT({} {},{} {})",
             self.min.lng_degrees(),
             self.min.lat_degrees(),
             self.max.lng_degrees(),

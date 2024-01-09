@@ -250,9 +250,9 @@ Header {
 == index ==
 17..129 (112 bytes): 0x[80, 69, 67, FF, 00, D3, CE, FE, 80, 77, 8E, 06, 00, 0E, 27, 07, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 80, 77, 8E, 06, 00, 0E, 27, 07, 80, 77, 8E, 06, 00, 0E, 27, 07, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 80, 96, 98, 00, 00, 2D, 31, 01, 80, 96, 98, 00, 00, 2D, 31, 01, 00, 00, 00, 00, 00, 00, 00, 00, 59, 00, 00, 00, 80, 69, 67, FF, 00, D3, CE, FE, 80, 69, 67, FF, 00, D3, CE, FE, BE, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]:
 level 0: 0x[80, 69, 67, FF, 00, D3, CE, FE, 80, 77, 8E, 06, 00, 0E, 27, 07, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
-Node { bounds: RECT(-1 -2, 11 12), offset: FeatureLocation { page_starting_offset: 0, feature_offset: 0 } }
+Node { bounds: RECT(-1 -2,11 12), offset: FeatureLocation { page_starting_offset: 0, feature_offset: 0 } }
 level 1: 0x[80, 77, 8E, 06, 00, 0E, 27, 07, 80, 77, 8E, 06, 00, 0E, 27, 07, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 80, 96, 98, 00, 00, 2D, 31, 01, 80, 96, 98, 00, 00, 2D, 31, 01, 00, 00, 00, 00, 00, 00, 00, 00, 59, 00, 00, 00, 80, 69, 67, FF, 00, D3, CE, FE, 80, 69, 67, FF, 00, D3, CE, FE, BE, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00, 00]
-Node { bounds: RECT(11 12, 11 12), offset: FeatureLocation { page_starting_offset: 0, feature_offset: 0 } }, Node { bounds: RECT(1 2, 1 2), offset: FeatureLocation { page_starting_offset: 0, feature_offset: 89 } }, Node { bounds: RECT(-1 -2, -1 -2), offset: FeatureLocation { page_starting_offset: 190, feature_offset: 0 } }
+Node { bounds: RECT(11 12,11 12), offset: FeatureLocation { page_starting_offset: 0, feature_offset: 0 } }, Node { bounds: RECT(1 2,1 2), offset: FeatureLocation { page_starting_offset: 0, feature_offset: 89 } }, Node { bounds: RECT(-1 -2,-1 -2), offset: FeatureLocation { page_starting_offset: 190, feature_offset: 0 } }
 
 == page #0 ==
 129..141 (12 bytes): 0x[B2, 00, 00, 00, B2, 00, 00, 00, 02, 00, 00, 00]:

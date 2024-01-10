@@ -8,6 +8,7 @@ use std::io::Read;
 #[derive(Debug)]
 pub struct GeozeroReader<'r, R: Read>(geomedea::Reader<'r, R>);
 
+/// Read geomedea into geozero, e.g. for converting geomedea to a different format.
 impl<'r, R: Read> GeozeroReader<'r, R> {
     pub fn new(reader: R) -> Result<Self> {
         let inner = geomedea::Reader::new(reader)?;
@@ -150,13 +151,24 @@ mod processing {
     ) -> GeozeroResult<()> {
         processor.polygon_begin(tagged, polygon.rings().len(), polygon_idx)?;
         for (ring_idx, ring) in polygon.rings().iter().enumerate() {
-            processing::process_line_string(processor, false, ring_idx, ring)?;
+            process_line_string(processor, false, ring_idx, ring)?;
         }
         processor.polygon_end(tagged, polygon_idx)?;
         Ok(())
     }
 }
 
+/// Async processing of HTTP selected feature - e.g. to read geomedea features via HTTP and write them to a different
+/// format.
+///
+/// ```no_run
+/// # async fn example() {
+/// let mut geojson_writer = geozero::geojson::GeoJsonWriter::new(vec![]);
+/// let mut http_reader = geomedea::HttpReader::open("https://my-example.example/my-file.geomedea").await.unwrap();
+/// let mut feature_stream = http_reader.select_all().await.unwrap();
+/// geomedea_geozero::process_geomedea(&mut feature_stream, &mut geojson_writer).await.unwrap()
+/// # }
+/// ```
 pub async fn process_features<W: FeatureProcessor>(
     stream: &mut FeatureStream<'_>,
     out: &mut W,

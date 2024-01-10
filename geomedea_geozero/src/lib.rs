@@ -5,6 +5,9 @@ pub use geozero_reader::process_features as process_geomedea;
 pub use geozero_reader::GeozeroReader as GeomedeaReader;
 pub use geozero_writer::GeozeroWriter as GeomedeaWriter;
 
+pub use geomedea;
+pub use geozero;
+
 #[cfg(test)]
 mod tests {
     use super::*;

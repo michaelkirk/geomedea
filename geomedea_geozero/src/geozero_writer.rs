@@ -6,6 +6,7 @@ use geozero::error::{GeozeroError, Result as GeozeroResult};
 use geozero::{FeatureProcessor, GeomProcessor, PropertyProcessor};
 use std::io::Write;
 
+/// Write geomedea from a geozero data source - e.g. converting a different format to geomedea.
 #[derive(Debug)]
 pub struct GeozeroWriter<W: Write> {
     inner: Writer<W>,

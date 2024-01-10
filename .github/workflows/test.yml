@@ -1,0 +1,30 @@
+name: test suite
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: build check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Cache rust build artifacts
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+      - name: cargo test
+        run: cargo test --all-features
+      - name: check all targets (e.g. bench)
+        run: cargo check --all-targets
+      - name: Clippy check
+        run: cargo clippy --all-targets
+      - name: Format check
+        run: cargo fmt --check

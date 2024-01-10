@@ -1,7 +1,7 @@
 use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
 pub use geomedea::{Bounds, LngLat, Reader};
-use geomedea_geozero::GeomedeaWriter;
 use geomedea_geozero::geozero::{geojson::GeoJsonReader, GeozeroDatasource};
+use geomedea_geozero::GeomedeaWriter;
 use std::fs::File;
 use std::io::BufReader;
 

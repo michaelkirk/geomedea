@@ -1,6 +1,6 @@
 use crate::bounds::Bounds;
 use crate::packed_r_tree::{Node, PackedRTree};
-use crate::writer::FeatureLocation;
+use crate::FeatureLocation;
 use crate::{deserialize_from, Result};
 use std::collections::VecDeque;
 use std::io::Read;
@@ -73,7 +73,7 @@ impl<R: Read> PackedRTreeReader<R> {
 
 pub(crate) mod http {
     use crate::packed_r_tree::{Node, PackedRTree};
-    use crate::writer::FeatureLocation;
+    use crate::FeatureLocation;
     use crate::Result;
     use crate::{deserialize_from, Bounds};
     use std::collections::VecDeque;
@@ -203,8 +203,7 @@ pub(crate) mod http {
     mod tests {
         use super::super::tests::example_index;
         use crate::packed_r_tree::PackedRTreeHttpReader;
-        use crate::wkt;
-        use crate::writer::FeatureLocation;
+        use crate::{wkt, FeatureLocation};
         use streaming_http_range_client::HttpClient;
 
         #[tokio::test]
@@ -258,8 +257,7 @@ mod tests {
     use super::*;
     use crate::geometry::Bounded;
     use crate::packed_r_tree::{Node, PackedRTreeWriter};
-    use crate::wkt;
-    use crate::writer::FeatureLocation;
+    use crate::{wkt, FeatureLocation};
 
     pub(crate) fn example_index() -> Vec<u8> {
         let mut writer = PackedRTreeWriter::new(4).unwrap();

@@ -1,7 +1,8 @@
 use crate::io::CountingReader;
 use crate::packed_r_tree::{PackedRTree, PackedRTreeReader};
-use crate::writer::{FeatureLocation, PageHeader};
-use crate::{deserialize_from, serialized_size, Bounds, Feature, Header, Result};
+use crate::{
+    deserialize_from, serialized_size, Bounds, Feature, FeatureLocation, Header, PageHeader, Result,
+};
 use std::io::{BufReader, Read, Take};
 use std::marker::PhantomData;
 use zstd::Decoder as ZstdDecoder;

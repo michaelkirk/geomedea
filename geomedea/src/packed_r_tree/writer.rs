@@ -88,8 +88,7 @@ impl PackedRTreeWriter {
 mod tests {
     use super::*;
     use crate::bounds::Bounds;
-    use crate::writer::FeatureLocation;
-    use crate::{wkt, LngLat};
+    use crate::{wkt, LngLat, FeatureLocation};
 
     #[test]
     fn write_empty() {

@@ -8,6 +8,7 @@ mod geometry;
 mod hilbert;
 mod http_reader;
 pub use http_reader::{FeatureStream, HttpReader};
+mod format;
 pub mod inspector;
 pub(crate) mod io;
 mod packed_r_tree;
@@ -18,6 +19,7 @@ mod writer;
 
 pub use bounds::Bounds;
 pub use error::{Error, Result};
+use format::{FeatureLocation, PageHeader};
 pub use geometry::{
     Geometry, GeometryCollection, LineString, LngLat, MultiLineString, MultiPoint, MultiPolygon,
     Point, Polygon,

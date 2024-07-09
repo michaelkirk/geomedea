@@ -1,7 +1,7 @@
 use crate::feature::Feature;
 use crate::packed_r_tree::{Node, PackedRTree, PackedRTreeHttpReader};
-use crate::writer::{FeatureLocation, PageHeader};
 use crate::{deserialize_from, serialized_size, Bounds, Header, Result};
+use crate::{FeatureLocation, PageHeader};
 use async_compression::tokio::bufread::ZstdDecoder;
 use bytes::{Bytes, BytesMut};
 use futures_util::{Stream, StreamExt};

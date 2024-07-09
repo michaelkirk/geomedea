@@ -6,8 +6,7 @@ pub use reader::PackedRTreeReader;
 use std::cell::OnceCell;
 pub use writer::PackedRTreeWriter;
 
-use crate::writer::FeatureLocation;
-use crate::Bounds;
+use crate::{Bounds, FeatureLocation};
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt::Debug;

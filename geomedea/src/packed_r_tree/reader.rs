@@ -72,6 +72,7 @@ impl<R: Read> PackedRTreeReader<R> {
 }
 
 pub(crate) mod http {
+    use crate::asyncio::AsyncReadExt;
     use crate::packed_r_tree::{Node, PackedRTree};
     use crate::FeatureLocation;
     use crate::Result;
@@ -79,7 +80,6 @@ pub(crate) mod http {
     use std::collections::VecDeque;
     use std::ops::Range;
     use streaming_http_range_client::{HttpClient, HttpRange};
-    use tokio::io::AsyncReadExt;
 
     pub struct PackedRTreeHttpReader {
         http_client: HttpClient,

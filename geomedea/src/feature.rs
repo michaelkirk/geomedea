@@ -36,6 +36,10 @@ impl Feature {
     pub fn property(&self, name: &str) -> Option<&PropertyValue> {
         self.properties.get(name)
     }
+
+    pub fn into_inner(self) -> (Geometry, Properties) {
+        (self.geometry, self.properties)
+    }
 }
 
 type PropertyMap = HashMap<String, PropertyValue>;
@@ -94,7 +98,7 @@ impl std::fmt::Debug for Properties {
 
 impl Properties {
     pub fn empty() -> Self {
-        Properties {
+        Self {
             ordered_keys: vec![],
             property_map: PropertyMap::new(),
         }

@@ -7,7 +7,6 @@ use crate::{
     PageHeader, Result,
 };
 use byteorder::{LittleEndian, WriteBytesExt};
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::marker::PhantomData;

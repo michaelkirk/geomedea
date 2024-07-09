@@ -203,6 +203,7 @@ impl Debug for Inspector<'_> {
     }
 }
 
+#[cfg(feature = "writer")]
 #[cfg(test)]
 mod tests {
     use super::*;

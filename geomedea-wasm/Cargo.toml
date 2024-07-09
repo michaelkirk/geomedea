@@ -1,0 +1,28 @@
+[package]
+name = "geomedea-wasm"
+version = "0.1.0"
+authors = ["Michael Kirk <michael.code@endoftheworl.de>"]
+description = "read geomedea from the web with wasm"
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+logging = ["console_log", "console_error_panic_hook", "log"]
+
+[dependencies]
+wasm-bindgen = "0.2.84"
+geomedea = { path = "../geomedea", default-features = false }
+console_error_panic_hook = { version = "0.1.7", optional = true }
+console_log = { version = "1.0.0", optional = true }
+log = {  version = "0.4.22", optional = true }
+futures-util = { version ="0.3.30", default-features = false }
+wasm-bindgen-futures = { version = "0.4.42", default-features = false }
+geojson = { version = "0.24.1"}
+geo-types = "0.7.13"
+wee_alloc = "0.4"
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.34"

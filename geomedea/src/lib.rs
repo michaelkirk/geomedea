@@ -5,6 +5,7 @@ mod bounds;
 mod error;
 mod feature;
 mod geometry;
+#[cfg(feature = "writer")]
 mod hilbert;
 mod http_reader;
 pub use http_reader::{FeatureStream, HttpReader};
@@ -14,7 +15,11 @@ pub(crate) mod io;
 mod packed_r_tree;
 mod reader;
 #[cfg(test)]
+#[cfg(feature = "writer")]
 mod test_data;
+mod wkt;
+
+#[cfg(feature = "writer")]
 mod writer;
 
 pub use bounds::Bounds;
@@ -25,7 +30,13 @@ pub use geometry::{
     Point, Polygon,
 };
 pub use reader::{FeatureIter, Reader};
+#[cfg(feature = "writer")]
 pub use writer::Writer;
+
+#[cfg(target_arch = "wasm32")]
+use futures_util::io as asyncio;
+#[cfg(not(target_arch = "wasm32"))]
+use tokio::io as asyncio;
 
 pub use crate::feature::{Feature, Properties, PropertyValue};
 use serde::{Deserialize, Serialize};
@@ -37,6 +48,7 @@ where
     Ok(bincode::serialized_size(value)?)
 }
 
+#[cfg(feature = "writer")]
 pub(crate) fn serialize_into<W, T>(writer: W, value: &T) -> Result<()>
 where
     W: std::io::Write,
@@ -92,6 +104,7 @@ fn ensure_logging() {
     }
 }
 
+#[cfg(feature = "writer")]
 #[cfg(test)]
 mod tests {
     use super::*;

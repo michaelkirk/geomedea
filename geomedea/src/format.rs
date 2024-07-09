@@ -22,6 +22,7 @@ pub(crate) struct PageHeader {
 }
 
 impl PageHeader {
+    #[cfg(feature = "writer")]
     pub fn new(encoded_page_length: u32, decoded_page_length: u32, feature_count: u32) -> Self {
         Self {
             encoded_page_length,

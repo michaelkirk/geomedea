@@ -1,15 +1,15 @@
 use crate::feature::Feature;
+use crate::io::async_ruszstd::MyRuzstdDecoder;
 use crate::packed_r_tree::{Node, PackedRTree, PackedRTreeHttpReader};
 use crate::{deserialize_from, serialized_size, Bounds, Header, Result};
 use crate::{FeatureLocation, PageHeader};
-use async_compression::tokio::bufread::ZstdDecoder;
 use bytes::{Bytes, BytesMut};
 use futures_util::{Stream, StreamExt};
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use streaming_http_range_client::{HttpClient, HttpRange};
-use tokio::io::{AsyncRead, AsyncReadExt, BufReader, ReadBuf, Take};
-use zstd::zstd_safe::WriteBuf;
+
+use crate::asyncio::{AsyncRead, AsyncReadExt, BufReader, Take};
 
 #[derive(Debug)]
 pub struct HttpReader {
@@ -18,6 +18,7 @@ pub struct HttpReader {
 }
 
 impl HttpReader {
+    #[cfg(feature = "writer")]
     pub async fn test_reader(data: &[u8]) -> Result<Self> {
         let http_client = HttpClient::test_client(data);
         Self::new(http_client).await
@@ -134,6 +135,7 @@ impl SelectBbox {
     }
 }
 
+#[derive(Debug)]
 struct AsyncPageReader {
     current_page: Option<CurrentPage>,
     is_compressed: bool,
@@ -146,7 +148,7 @@ struct CurrentPage {
     page_decoder: Box<dyn AsyncPageDecoder>,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 trait AsyncPageDecoder: std::fmt::Debug + AsyncRead + Unpin {
     fn was_read_to_end(&self) -> bool;
     async fn ff_to_feature_offset(&mut self, offset_within_page: u32) -> Result<()>;
@@ -155,15 +157,18 @@ trait AsyncPageDecoder: std::fmt::Debug + AsyncRead + Unpin {
 
 #[derive(Debug)]
 struct ZstdPageDecoder {
-    zstd_decoder: Take<ZstdDecoder<BufReader<Take<HttpClient>>>>,
+    zstd_decoder: Take<MyRuzstdDecoder<BufReader<Take<HttpClient>>>>,
     decoded_page_length: u32,
 }
 
 impl ZstdPageDecoder {
+    // MJK DEBUG:  decoded_page_length = 0, first time through as part of init
+    // MJK DEBUG:  decoded_page_length = 156
     fn new(http_client: Take<HttpClient>, decoded_page_length: u32) -> Self {
         // TODO: implement BufReader for http_client?
         let buffered = BufReader::new(http_client);
-        let zstd_decoder = ZstdDecoder::new(buffered).take(decoded_page_length as u64);
+        // let zstd_decoder = ZstdDecoder::new(buffered).take(decoded_page_length as u64);
+        let zstd_decoder = MyRuzstdDecoder::new(buffered).take(decoded_page_length as u64);
         Self {
             decoded_page_length,
             zstd_decoder,
@@ -175,17 +180,30 @@ impl ZstdPageDecoder {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl AsyncRead for ZstdPageDecoder {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
         Pin::new(&mut self.zstd_decoder).poll_read(cx, buf)
     }
 }
 
-#[async_trait::async_trait]
+#[cfg(target_arch = "wasm32")]
+impl AsyncRead for ZstdPageDecoder {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<std::io::Result<usize>> {
+        debug!("ZstdPageDecoder.poll_read");
+        Pin::new(&mut self.zstd_decoder).poll_read(cx, buf)
+    }
+}
+
+#[async_trait::async_trait(?Send)]
 impl AsyncPageDecoder for ZstdPageDecoder {
     async fn ff_to_feature_offset(&mut self, offset_within_page: u32) -> Result<()> {
         assert!(
@@ -193,9 +211,9 @@ impl AsyncPageDecoder for ZstdPageDecoder {
             "shouldn't rewind"
         );
         let distance = offset_within_page - self.offset_within_page();
-        let skipped = tokio::io::copy(
+        let skipped = crate::asyncio::copy(
             &mut (&mut self.zstd_decoder).take(distance as u64),
-            &mut tokio::io::sink(),
+            &mut crate::asyncio::sink(),
         )
         .await?;
         assert_eq!(skipped, distance as u64);
@@ -234,7 +252,7 @@ impl UncompressedPageDecoder {
     }
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 impl AsyncPageDecoder for UncompressedPageDecoder {
     async fn ff_to_feature_offset(&mut self, offset_within_page: u32) -> Result<()> {
         assert!(
@@ -242,9 +260,9 @@ impl AsyncPageDecoder for UncompressedPageDecoder {
             "shouldn't rewind"
         );
         let distance = offset_within_page - self.offset_within_page();
-        let skipped = tokio::io::copy(
+        let skipped = crate::asyncio::copy(
             &mut (&mut self.inner).take(distance as u64),
-            &mut tokio::io::sink(),
+            &mut crate::asyncio::sink(),
         )
         .await?;
         assert_eq!(skipped, distance as u64);
@@ -260,12 +278,24 @@ impl AsyncPageDecoder for UncompressedPageDecoder {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl AsyncRead for UncompressedPageDecoder {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
+        Pin::new(&mut self.inner).poll_read(cx, buf)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl AsyncRead for UncompressedPageDecoder {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<std::io::Result<usize>> {
         Pin::new(&mut self.inner).poll_read(cx, buf)
     }
 }
@@ -441,6 +471,8 @@ impl AsyncPageReader {
         http_client.read_exact(&mut page_header_buffer).await?;
 
         let next_page_header: PageHeader = deserialize_from(&*page_header_buffer)?;
+        info!("read next PageHeader: {next_page_header:?}");
+
         // dbg!(&next_page_header);
         let reader = http_client.take(next_page_header.encoded_page_length() as u64);
         let next_page_decoder = new_page_decoder(
@@ -457,12 +489,40 @@ impl AsyncPageReader {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl AsyncRead for AsyncPageReader {
     fn poll_read(
         mut self: Pin<&mut Self>,
         cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
+        buf: &mut tokio::io::ReadBuf<'_>,
     ) -> Poll<std::io::Result<()>> {
+        let CurrentPage {
+            mut page_decoder,
+            page_starting_offset,
+        } = self
+            .current_page
+            .take()
+            .expect("current_page is always replaced");
+
+        let poll_result = Pin::new(&mut page_decoder).poll_read(cx, buf);
+
+        self.current_page = Some(CurrentPage {
+            page_decoder,
+            page_starting_offset,
+        });
+
+        poll_result
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl AsyncRead for AsyncPageReader {
+    fn poll_read(
+        mut self: Pin<&mut Self>,
+        cx: &mut Context<'_>,
+        buf: &mut [u8],
+    ) -> Poll<std::io::Result<usize>> {
+        debug!("AsyncPageReader.poll_read");
         let CurrentPage {
             mut page_decoder,
             page_starting_offset,
@@ -526,6 +586,8 @@ impl Selection {
         match self {
             Selection::SelectAll(select_all) => {
                 if select_all.features_left_in_document == 0 {
+                    // TODO: restore this assert on wasm32
+                    #[cfg(not(target_arch = "wasm32"))]
                     debug_assert!(page_reader.read_u8().await.is_err(), "should be empty");
                     return Ok(None);
                 }
@@ -566,8 +628,8 @@ pub struct FeatureStream<'a> {
 impl<'a> FeatureStream<'a> {
     fn new(stream: impl Stream<Item = Result<Bytes>> + Unpin + 'a) -> Self {
         let inner = stream.map(move |feature_buffer| {
-            let feature = deserialize_from::<_, Feature>(feature_buffer?.as_slice())?;
-            trace!("yielding feature: {feature:?}");
+            let feature = deserialize_from::<_, Feature>(feature_buffer?.as_ref())?;
+            // trace!("yielding feature: {feature:?}");
             Ok(feature)
         });
         Self {
@@ -585,6 +647,7 @@ impl Stream for FeatureStream<'_> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "writer")]
 mod test {
     use super::*;
     use crate::feature::PropertyValue;
@@ -666,7 +729,7 @@ mod test {
     }
 
     #[tokio::test]
-    async fn bbox_larger_file() {
+    async fn bbox_compressed_larger_file() {
         ensure_logging();
 
         let bytes = std::fs::read("../test_fixtures/USCounties-compressed.geomedea").unwrap();

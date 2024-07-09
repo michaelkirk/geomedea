@@ -47,7 +47,7 @@ impl<R: Read> GeozeroDatasource for GeozeroFeatureIter<'_, R> {
 
 mod processing {
     use super::*;
-    use crate::geozero_writer::geomedea_to_geozero_column_value;
+    use crate::geomedea_to_geozero_column_value;
 
     pub(crate) fn process_feature<P: FeatureProcessor>(
         processor: &mut P,

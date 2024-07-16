@@ -690,9 +690,9 @@ mod tests {
         assert_relative_eq!(lnglat.lat_degrees(), -89.99999981438727, epsilon = 1e-7);
 
         if is_compressed {
-            assert_eq!(output.len(), 63291);
+            assert_eq!(output.len(), 62578);
         } else {
-            assert_eq!(output.len(), 193771);
+            assert_eq!(output.len(), 150044);
         }
     }
 
@@ -726,9 +726,9 @@ mod tests {
         assert_relative_eq!(lnglat.lat_degrees(), -89.99999981438727, epsilon = 1e-7);
 
         if is_compressed {
-            assert_eq!(output.len(), 66525);
+            assert_eq!(output.len(), 64928);
         } else {
-            assert_eq!(output.len(), 193963);
+            assert_eq!(output.len(), 150188);
         }
     }
 
@@ -767,9 +767,9 @@ mod tests {
             name
         );
         if is_compressed {
-            assert_eq!(output.len(), 81600);
+            assert_eq!(output.len(), 80937);
         } else {
-            assert_eq!(output.len(), 108715);
+            assert_eq!(output.len(), 105123);
         }
     }
 
@@ -874,7 +874,7 @@ mod tests {
         input.process_geom(&mut geomedea_writer).unwrap();
         // should this finish be in process_geom?
         geomedea_writer.finish().unwrap();
-        assert_eq!(output.len(), 505);
+        assert_eq!(output.len(), 497);
     }
 
     #[test]

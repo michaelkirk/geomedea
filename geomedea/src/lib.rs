@@ -28,17 +28,17 @@ pub use writer::Writer;
 pub use crate::feature::{Feature, Properties, PropertyValue};
 use serde::{Deserialize, Serialize};
 
-pub(crate) fn serialized_size<T: ?Sized>(value: &T) -> Result<u64>
+pub(crate) fn serialized_size<T>(value: &T) -> Result<u64>
 where
-    T: serde::Serialize,
+    T: serde::Serialize + ?Sized,
 {
     Ok(bincode::serialized_size(value)?)
 }
 
-pub(crate) fn serialize_into<W, T: ?Sized>(writer: W, value: &T) -> Result<()>
+pub(crate) fn serialize_into<W, T>(writer: W, value: &T) -> Result<()>
 where
     W: std::io::Write,
-    T: serde::Serialize,
+    T: serde::Serialize + ?Sized,
 {
     Ok(bincode::serialize_into(writer, value)?)
 }

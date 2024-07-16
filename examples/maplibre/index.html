@@ -32,9 +32,9 @@
     </style>
     <div id="map"></div>
 <script type="module">
-    import init, * as wasm from "../../js/geomedea/geomedea_wasm.js";
+    import init, * as wasm from "../../js/geomedea/geomedea.js";
     window.getFeatureCollection = async () => {
-        await init("../../js/geomedea/geomedea_wasm_bg.wasm");
+        await init("../../js/geomedea/geomedea_bg.wasm");
 
         let relativeInput = "/../../../files/test_fixtures/USCounties-compressed.geomedea";
         // let relativeInput = "/../../../files/test_fixtures/USCounties-uncompressed.geomedea";

@@ -6,12 +6,12 @@
   ],
   "version": "0.1.0",
   "files": [
-    "geomedea_wasm_bg.wasm",
-    "geomedea_wasm.js",
-    "geomedea_wasm.d.ts"
+    "geomedea_bg.wasm",
+    "geomedea.js",
+    "geomedea.d.ts"
   ],
-  "main": "geomedea_wasm.js",
-  "types": "geomedea_wasm.d.ts",
+  "main": "geomedea.js",
+  "types": "geomedea.d.ts",
   "sideEffects": [
     "./snippets/*"
   ]

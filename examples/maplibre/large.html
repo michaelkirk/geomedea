@@ -38,10 +38,11 @@
     window.getFeatureCollection = async (bbox) => {
         await init("../../js/geomedea/geomedea_bg.wasm");
 
-        let input = "https://d3imsg4yynhh83.cloudfront.net/test-data/population_areas.geomedea"
-        let httpReader = new wasm.HttpReader(input);
+        const input = "https://d3imsg4yynhh83.cloudfront.net/test-data/population_areas.geomedea"
+        // const input = "http://localhost:8001/files/population_areas.geomedea"
+        const httpReader = new wasm.HttpReader(input);
         console.log('bbox', bbox);
-        let featureCollectionString = await httpReader.select_bbox(bbox.maxY, bbox.maxX, bbox.minY, bbox.minX);
+        const featureCollectionString = await httpReader.select_bbox(bbox.maxY, bbox.maxX, bbox.minY, bbox.minX);
         const featureCollection = JSON.parse(featureCollectionString);
         let i = 1;
         for (let feature of featureCollection.features) {

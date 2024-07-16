@@ -2,15 +2,10 @@
 <html lang="en">
 <head>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
-    <link rel="stylesheet" href="/examples/site.css" />
+    <link rel="stylesheet" href="../site.css" />
     <link href="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/underscore@1.13.1/underscore-min.js"></script>
-    <script src="https://unpkg.com/json-formatter-js"></script>
-
-    <style>
-        #map { height: 480px; }
-    </style>
 </head>
 <body>
     <ul class="primary-navigation">
@@ -27,11 +22,14 @@
         </li>
     </ul>
     <ul class="secondary-navigation">
-        <li><a href="/examples/maplibre/">Basic Example</a></li>
+        <li><a href="index.html">Basic Example</a></li>
         <li class="active">Filter By Rect</li>
-        <li><a href="/examples/maplibre/large.html">Filtering a Large Dataset</a></li>
+        <li><a href="large.html">Filtering a Large Dataset</a></li>
     </ul>
 
+    <style>
+        #map { height: 480px; }
+    </style>
     <div id="map"></div>
 <script type="module">
     console.log('importing wasm');
@@ -39,9 +37,14 @@
     window.getFeatureCollection = async (bbox) => {
         await init("../../js/geomedea/geomedea_wasm_bg.wasm");
 
-        let siteOrigin = window.location.origin;
-        let input = siteOrigin + "/files/test_fixtures/USCounties-compressed.geomedea"
-        // let input = siteOrigin + "/files/test_fixtures/USCounties-uncompressed.geomedea"
+        const relativeInput = "/../../../files/test_fixtures/USCounties-compressed.geomedea";
+        // let relativeInput = "/../../../files/test_fixtures/USCounties-uncompressed.geomedea";
+        function makeAbsolute(relativePath) {
+            const siteOrigin = window.location.href;
+            const absolute = siteOrigin + relativeInput;
+            return new URL(absolute).toString()
+        }
+        const input = makeAbsolute(relativeInput);
 
         let httpReader = new wasm.HttpReader(input);
         console.log('httpReader', httpReader);

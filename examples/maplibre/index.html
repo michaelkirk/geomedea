@@ -2,14 +2,12 @@
 <html lang="en">
 <head>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
-    <link rel="stylesheet" href="/examples/site.css" />
+    <link rel="stylesheet" href="../site.css" />
     <link href="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.css" rel="stylesheet" />
     <script src="https://unpkg.com/maplibre-gl@3.3.1/dist/maplibre-gl.js"></script>
-    <script src="https://unpkg.com/json-formatter-js"></script>
 </head>
 <body>
-<style>
-</style>
+
     <ul class="primary-navigation">
         <!-- 
         <li>
@@ -25,8 +23,8 @@
     </ul>
     <ul class="secondary-navigation">
         <li class="active">Basic Example</li>
-        <li><a href="/examples/maplibre/filtered.html">Filter By Rect</a></li>
-        <li><a href="/examples/maplibre/large.html">Filtering a Large Dataset</a></li>
+        <li><a href="filtered.html">Filter By Rect</a></li>
+        <li><a href="large.html">Filtering a Large Dataset</a></li>
     </ul>
 
     <style>
@@ -37,9 +35,16 @@
     import init, * as wasm from "../../js/geomedea/geomedea_wasm.js";
     window.getFeatureCollection = async () => {
         await init("../../js/geomedea/geomedea_wasm_bg.wasm");
-        let siteOrigin = window.location.origin;
-        let input = siteOrigin + "/files/test_fixtures/USCounties-compressed.geomedea"
-        // let input = siteOrigin + "/files/test_fixtures/USCounties-uncompressed.geomedea"
+
+        let relativeInput = "/../../../files/test_fixtures/USCounties-compressed.geomedea";
+        // let relativeInput = "/../../../files/test_fixtures/USCounties-uncompressed.geomedea";
+        function makeAbsolute(relativePath) {
+            let siteOrigin = window.location.href;
+            let absolute = siteOrigin + relativeInput;
+            return new URL(absolute).toString()
+        }
+        let input = makeAbsolute(relativeInput);
+
         let httpReader = new wasm.HttpReader(input);
         let featureCollectionString = await httpReader.select_all();
         const featureCollection = JSON.parse(featureCollectionString);

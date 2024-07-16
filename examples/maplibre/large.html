@@ -34,9 +34,9 @@
 
 <script type="module">
     console.log('importing wasm');
-    import init, * as wasm from "../../js/geomedea/geomedea_wasm.js";
+    import init, * as wasm from "../../javascript/geomedea/geomedea_wasm.js";
     window.getFeatureCollection = async (bbox) => {
-        await init("../../js/geomedea/geomedea_wasm_bg.wasm");
+        await init("../../javascript/geomedea/geomedea_wasm_bg.wasm");
 
         let input = "https://d3imsg4yynhh83.cloudfront.net/test-data/population_areas.geomedea"
         let httpReader = new wasm.HttpReader(input);

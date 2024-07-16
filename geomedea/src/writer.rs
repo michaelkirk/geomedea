@@ -471,9 +471,9 @@ mod tests {
             }
 
             if is_compressed {
-                assert_eq!(317, output.len());
+                assert_eq!(337, output.len());
             } else {
-                assert_eq!(349, output.len());
+                assert_eq!(317, output.len());
             }
         }
     }

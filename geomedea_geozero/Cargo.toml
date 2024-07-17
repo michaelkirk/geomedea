@@ -4,10 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["writer"]
+writer = ["geomedea/writer"]
 
 [dependencies]
 futures-util = "0.3.29"
-geomedea = { version = "0.2.0", path = "../geomedea" }
+geomedea = { version = "0.2.0", path = "../geomedea", default-features = false }
 # Waiting for release
 geozero = '*'
 log = "0.4.20"

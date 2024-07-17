@@ -5,8 +5,7 @@ use std::ops::Range;
 
 use crate::io::CountingReader;
 use crate::packed_r_tree::{Node, PackedRTree};
-use crate::writer::PageHeader;
-use crate::{deserialize_from, Feature, Header, Result};
+use crate::{deserialize_from, Feature, Header, PageHeader, Result};
 
 struct CountingDeserializer<'a> {
     counting_reader: CountingReader<&'a [u8]>,
@@ -204,6 +203,7 @@ impl Debug for Inspector<'_> {
     }
 }
 
+#[cfg(feature = "writer")]
 #[cfg(test)]
 mod tests {
     use super::*;

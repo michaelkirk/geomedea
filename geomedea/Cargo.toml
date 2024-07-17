@@ -13,6 +13,11 @@ doc = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+# NOTE: `writer` is not supported on wasm, use no-default-features on that target. See the `geomedea-wasm` crate.
+default = ["writer"]
+writer = ["zstd"]
+
 [dependencies]
 bincode = "1.3.3"
 log = "0.4.20"
@@ -20,18 +25,19 @@ memmap2 = "0.9.0"
 serde = { version = "1.0.188", features = ["derive"] }
 tempfile = "3.8.0"
 thiserror = "1.0.49"
-zstd = "0.12.4"
-streaming-http-range-client = "0.1.1"
-futures-util = "0.3.29"
+zstd = {  version = "0.12.4", optional = true }
+streaming-http-range-client = { version = "1.0.0" }
+futures-util = { version = "0.3.29", default-features = false }
 tokio = { version = "1.34.0", default-features = false }
 async-stream = "0.3.5"
-bytes = { version = "1.5.0", features = [] }
+bytes = { version = "1.5.0", default-features = false }
 byteorder = "1.5.0"
-async-compression = { version = "0.4.4", features = ["zstd", "tokio"] }
+async-compression = { version = "0.4.4", default-features = false, features = ["futures-io", "tokio"], git = "https://github.com/michaelkirk/async-compression", branch = "mkirk/external-decoder" }
 async-trait = "0.1.74"
+ruzstd = {  version = "0.7.0", git = "https://github.com/michaelkirk/zstd-rs", branch = "mkirk/fix-incremental-reads" }
 
 [dev-dependencies]
-geomedea_geozero = { path = "../geomedea_geozero" }
+geomedea_geozero = { path = "../geomedea_geozero", default-features = false }
 serde_json = "1.0.107"
 approx = "0.5.1"
 env_logger = "0.10.0"

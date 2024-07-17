@@ -3,9 +3,11 @@ resolver = "2"
 
 members = [
   "geomedea",
-  "geomedea_geozero"
+  "geomedea_geozero",
+  "geomedea-wasm"
 ]
 
 [patch.crates-io]
 # waiting for release
 geozero = { git = "https://github.com/georust/geozero", rev = "8501fedf288adc851d08a367f8f651ee643d4bed" }
+

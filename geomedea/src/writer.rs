@@ -2,9 +2,11 @@ use crate::bounds::Bounds;
 use crate::geometry::Bounded;
 use crate::io::CountingWriter;
 use crate::packed_r_tree::{Node, PackedRTreeWriter};
-use crate::{deserialize_from, hilbert, serialize_into, serialized_size, Feature, Header, Result};
+use crate::{
+    deserialize_from, hilbert, serialize_into, serialized_size, Feature, FeatureLocation, Header,
+    PageHeader, Result,
+};
 use byteorder::{LittleEndian, WriteBytesExt};
-use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
@@ -120,7 +122,7 @@ impl<W: Write> Writer<W> {
             serialize_into(&mut self.inner, &page_header)?;
             std::io::copy(
                 &mut BufReader::new(
-                    (&mut page_contents).take(page_header.encoded_page_length as u64),
+                    (&mut page_contents).take(page_header.encoded_page_length() as u64),
                 ),
                 &mut self.inner,
             )?;
@@ -144,14 +146,6 @@ struct FeatureEntry {
     tmp_offset: u64,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-pub struct FeatureLocation {
-    /// How far into the feature data does this feature's page start?
-    pub(crate) page_starting_offset: u64,
-    /// The byte offset of this feature within its (uncompressed) page
-    pub(crate) feature_offset: u32,
-}
-
 enum CurrentPage<W: Write, PE: PageEncoder<W>> {
     Started { page: Page<W, PE> },
     Unstarted { writer: W, next_page_id: u32 },
@@ -165,33 +159,6 @@ struct Page<W: Write, PE: PageEncoder<W>> {
     feature_count: u32,
     encoder: PE,
     _marker: PhantomData<W>, // Do I need this?
-}
-
-#[derive(Debug, Serialize, Deserialize, Default)]
-pub(crate) struct PageHeader {
-    // The number of bytes on disk. The actual content bytes might be more or less if
-    // the page is compressed. (hopefully less!)
-    encoded_page_length: u32,
-    decoded_page_length: u32,
-    feature_count: u32,
-}
-
-impl PageHeader {
-    pub fn serialized_size() -> usize {
-        // Assumes the PageHeader serialization is fixed. We'll have to revisit if this every changes.
-        let value = serialized_size(&Self::default()).expect("valid serialization size");
-        debug_assert_eq!(value, 12, "If PageHeader fields are changed, this assertion can be updated, but it *must* remain a fixed size - e.g. no dynamically sized types like a Vec");
-        value as usize
-    }
-    pub fn encoded_page_length(&self) -> u32 {
-        self.encoded_page_length
-    }
-    pub fn feature_count(&self) -> u32 {
-        self.feature_count
-    }
-    pub fn decoded_page_length(&self) -> u32 {
-        self.decoded_page_length
-    }
 }
 
 impl<W: Write + Seek, PE: PageEncoder<W>> Page<W, PE> {
@@ -239,11 +206,7 @@ impl<W: Write + Seek, PE: PageEncoder<W>> Page<W, PE> {
         let writer = self.encoder.finish()?;
         let encoded_page_length =
             u32::try_from(writer.total_bytes_written()).expect("page must be less than u32 bytes");
-        let header = PageHeader {
-            encoded_page_length,
-            decoded_page_length,
-            feature_count: self.feature_count,
-        };
+        let header = PageHeader::new(encoded_page_length, decoded_page_length, self.feature_count);
         Ok((header, writer))
     }
 }
@@ -284,11 +247,7 @@ impl<W: Write + Seek, PE: PageEncoder<W>> FeatureWriter<W, PE> {
         };
 
         if self.finished_pages.is_empty() {
-            self.finished_pages.push(PageHeader {
-                encoded_page_length: 0,
-                feature_count: 0,
-                decoded_page_length: 0,
-            });
+            self.finished_pages.push(PageHeader::new(0, 0, 0));
         }
         Ok((self.finished_pages, writer))
     }

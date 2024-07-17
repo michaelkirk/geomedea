@@ -1,10 +1,12 @@
 use crate::io::CountingReader;
 use crate::packed_r_tree::{PackedRTree, PackedRTreeReader};
-use crate::writer::{FeatureLocation, PageHeader};
-use crate::{deserialize_from, serialized_size, Bounds, Feature, Header, Result};
-use std::io::{BufReader, Read, Take};
+use crate::{
+    deserialize_from, serialized_size, Bounds, Error, Feature, FeatureLocation, Header, PageHeader,
+    Result,
+};
+use ruzstd::{FrameDecoder, StreamingDecoder as ZstdDecoder};
+use std::io::{Read, Take};
 use std::marker::PhantomData;
-use zstd::Decoder as ZstdDecoder;
 
 struct PageReader<'r, R: Read + 'r> {
     // Getting rid of this Option would be nice
@@ -160,14 +162,20 @@ trait PageDecoder<'r, R: Read + 'r>: Read + 'r {
 }
 
 struct ZstdPageDecoder<R: Read> {
-    zstd_decoder: Take<ZstdDecoder<'static, BufReader<Take<CountingReader<R>>>>>,
+    zstd_decoder: Take<ZstdDecoder<Take<CountingReader<R>>, FrameDecoder>>,
     decoded_page_length: u32,
 }
 
 impl<R: Read> ZstdPageDecoder<R> {
     fn new(read: Take<CountingReader<R>>, decoded_page_length: u32) -> Result<Self> {
-        // Single frame to not read across pages, which currently are just concatenated frames.
-        let zstd_decoder = zstd::Decoder::new(read)?.take(decoded_page_length as u64);
+        let zstd_decoder = ZstdDecoder::new(read)
+            .map_err(|e| {
+                Error::IO(std::io::Error::new(
+                    std::io::ErrorKind::InvalidData,
+                    format!("Error creating ZstdDecoder: {e:?}"),
+                ))
+            })?
+            .take(decoded_page_length as u64);
         Ok(Self {
             zstd_decoder,
             decoded_page_length,
@@ -202,11 +210,8 @@ impl<'r, R: Read + 'r> PageDecoder<'r, R> for ZstdPageDecoder<R> {
     }
 
     fn into_inner(self: Box<Self>) -> CountingReader<R> {
-        self.zstd_decoder
-            .into_inner()
-            .finish()
-            .into_inner()
-            .into_inner()
+        let (read, _enc) = self.zstd_decoder.into_inner().into_parts();
+        read.into_inner()
     }
 }
 
@@ -347,7 +352,13 @@ fn new_page_decoder<'r, R: Read + 'r>(
     decoded_page_length: u32,
 ) -> Result<Box<dyn PageDecoder<'r, R>>> {
     let page_decoder: Box<dyn PageDecoder<'r, R>> = if is_compressed {
-        Box::new(ZstdPageDecoder::<R>::new(inner, decoded_page_length)?)
+        if decoded_page_length == 0 {
+            // else we error when trying to read the header from an empty reader.
+            // zstd does not require this workaround - is this a bug in ruzstd?
+            Box::new(UncompressedPageDecoder::new(inner))
+        } else {
+            Box::new(ZstdPageDecoder::<R>::new(inner, decoded_page_length)?)
+        }
     } else {
         Box::new(UncompressedPageDecoder::new(inner))
     };
@@ -392,6 +403,7 @@ impl<R: Read> FeatureIter<'_, R> {
 }
 
 #[cfg(test)]
+#[cfg(feature = "writer")]
 mod tests {
     use super::*;
     use crate::{ensure_logging, test_data, wkt, Geometry};

@@ -8,22 +8,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - name: Cache rust build artifacts
+      - name: Cache cargo registry
         uses: actions/cache@v3
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.toml') }}
+          path: ~/.cargo/registry
+          key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-cargo-registry-
+
+      - name: Cache cargo index
+        uses: actions/cache@v3
+        with:
+          path: ~/.cargo/index
+          key: ${{ runner.os }}-cargo-index-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-index-
+
+      - name: Cache cargo build
+        uses: actions/cache@v3
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-build-${{ hashFiles('**/Cargo.lock') }}-${{ hashFiles('geomedea/geomedea-wasm/src/**/*.rs') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-build-${{ runner.os }}-
+
+      - name: Add wasm target
+        run: rustup target add wasm32-unknown-unknown
       - name: cargo test
-        run: cargo test --all-features
+        run: cargo test --release --all-features
       - name: check all targets (e.g. bench)
         run: cargo check --all-targets
+      - name: wasm build
+        run: cargo build -p geomedea-wasm --target wasm32-unknown-unknown
       - name: Clippy check
         run: cargo clippy --all-targets
       - name: Format check

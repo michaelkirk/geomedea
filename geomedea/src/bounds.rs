@@ -87,6 +87,7 @@ impl Bounds {
         }
     }
 
+    #[cfg(feature = "writer")]
     pub(crate) fn center(&self) -> LngLat {
         let half_lng_width = self.unscaled_lng_width() / 2;
         let half_lat_height = self.unscaled_lat_height() / 2;
@@ -118,6 +119,7 @@ impl Bounds {
     }
 }
 
+#[cfg(feature = "writer")]
 #[cfg(test)]
 mod tests {
     use crate::wkt;

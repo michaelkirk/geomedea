@@ -1,13 +1,14 @@
 mod reader;
+#[cfg(feature = "writer")]
 mod writer;
 
 pub use reader::http::PackedRTreeHttpReader;
 pub use reader::PackedRTreeReader;
 use std::cell::OnceCell;
+#[cfg(feature = "writer")]
 pub use writer::PackedRTreeWriter;
 
-use crate::writer::FeatureLocation;
-use crate::Bounds;
+use crate::{Bounds, FeatureLocation};
 use serde::{Deserialize, Serialize};
 use std::cmp::min;
 use std::fmt::Debug;
@@ -23,6 +24,7 @@ pub struct Node {
 }
 
 impl Node {
+    #[cfg(feature = "writer")]
     pub(crate) fn leaf_node(bounds: Bounds, offset: FeatureLocation) -> Self {
         Self { bounds, offset }
     }

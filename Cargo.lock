@@ -649,7 +649,7 @@ dependencies = [
 
 [[package]]
 name = "geomedea"
-version = "0.2.1"
+version = "0.3.0-beta.1"
 dependencies = [
  "approx",
  "async-compression",

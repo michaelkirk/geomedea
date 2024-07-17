@@ -10,7 +10,7 @@ writer = ["geomedea/writer"]
 
 [dependencies]
 futures-util = "0.3.29"
-geomedea = { version = "0.2.0", path = "../geomedea", default-features = false }
+geomedea = { version = "0.3.0-beta.1", path = "../geomedea", default-features = false }
 # Waiting for release
 geozero = '0.13.0'
 log = "0.4.20"

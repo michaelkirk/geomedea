@@ -8,9 +8,6 @@ use geojson::{JsonObject, JsonValue};
 use geomedea::{Bounds, FeatureStream, LngLat, Properties, PropertyValue};
 use wasm_bindgen::prelude::*;
 
-#[global_allocator]
-static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
-
 #[cfg(feature = "log")]
 #[macro_use]
 extern crate log;

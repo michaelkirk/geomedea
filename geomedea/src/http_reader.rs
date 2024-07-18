@@ -1,10 +1,12 @@
 use crate::feature::Feature;
 use crate::io::async_ruszstd::MyRuzstdDecoder;
 use crate::packed_r_tree::{Node, PackedRTree, PackedRTreeHttpReader};
-use crate::{deserialize_from, serialized_size, Bounds, Header, Result};
+use crate::{deserialize_from, serialized_size, Bounds, Header, Result, DEFAULT_PAGE_SIZE_GOAL};
 use crate::{FeatureLocation, PageHeader};
 use bytes::{Bytes, BytesMut};
 use futures_util::{Stream, StreamExt};
+use std::collections::VecDeque;
+use std::ops::Range;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use streaming_http_range_client::{HttpClient, HttpRange};
@@ -118,7 +120,9 @@ struct SelectAll {
 
 struct SelectBbox {
     feature_start: u64,
+    current_batch: VecDeque<FeatureLocation>,
     feature_locations: Box<dyn Stream<Item = Result<FeatureLocation>> + Unpin>,
+    first_item_of_next_batch: Option<FeatureLocation>,
 }
 
 impl SelectBbox {
@@ -129,7 +133,56 @@ impl SelectBbox {
         Self {
             feature_locations: Box::new(Box::pin(feature_locations)),
             feature_start,
+            current_batch: VecDeque::new(),
+            first_item_of_next_batch: None,
         }
+    }
+
+    /// Returns the location of the Feature as well as a suggested byte range within the Feature buffer
+    /// if a request needs to be made.
+    async fn next_feature_location(&mut self) -> Result<Option<(FeatureLocation, Range<u64>)>> {
+        if self.current_batch.is_empty() {
+            // Else determine next batch
+            let mut prev_page_starting_offset = None;
+
+            if let Some(first_item_of_next_batch) = self.first_item_of_next_batch.take() {
+                prev_page_starting_offset = Some(first_item_of_next_batch.page_starting_offset);
+                self.current_batch.push_back(first_item_of_next_batch)
+            }
+
+            while let Some(next) = self.feature_locations.next().await.transpose()? {
+                let Some(batch_starting_offset) = prev_page_starting_offset else {
+                    // starting a new batch
+                    assert!(self.current_batch.is_empty());
+                    prev_page_starting_offset = Some(next.page_starting_offset);
+                    self.current_batch.push_back(next);
+                    continue;
+                };
+
+                let close_enough = DEFAULT_PAGE_SIZE_GOAL * 2;
+                if next.page_starting_offset < batch_starting_offset + close_enough {
+                    // It's close enough, add it to the batch
+                    prev_page_starting_offset = Some(next.page_starting_offset);
+                    self.current_batch.push_back(next);
+                } else {
+                    self.first_item_of_next_batch = Some(next);
+                    break;
+                }
+            }
+        }
+
+        let Some(end_of_last_in_batch) = self.current_batch.back().map(|last_in_batch| {
+            last_in_batch.page_starting_offset + (DEFAULT_PAGE_SIZE_GOAL as f64 * 1.1) as u64
+        }) else {
+            return Ok(None);
+        };
+        let next = self
+            .current_batch
+            .pop_front()
+            .expect("if there is a back, there is also a front");
+
+        let start_of_batch = next.page_starting_offset;
+        Ok(Some((next, start_of_batch..end_of_last_in_batch)))
     }
 }
 
@@ -330,9 +383,9 @@ impl AsyncPageReader {
         &mut self,
         feature_start: u64,
         location: FeatureLocation,
+        batch_range: Range<u64>,
     ) -> Result<()> {
-        // TODO be smarter about this.
-        let overfetch = 512_000;
+        let overfetch = batch_range.end - batch_range.start;
 
         // First get to the right page.
         let (mut page_decoder, page_starting_offset) = match self
@@ -596,13 +649,18 @@ impl Selection {
                 select_all.features_left_in_document -= 1;
             }
             Selection::SelectBbox(select_bbox) => {
-                let Some(next_location) = select_bbox.feature_locations.next().await.transpose()?
+                let Some((next_location, feature_batch_range)) =
+                    select_bbox.next_feature_location().await?
                 else {
                     return Ok(None);
                 };
 
                 page_reader
-                    .ff_to_location(select_bbox.feature_start, next_location)
+                    .ff_to_location(
+                        select_bbox.feature_start,
+                        next_location,
+                        feature_batch_range,
+                    )
                     .await?;
             }
         }

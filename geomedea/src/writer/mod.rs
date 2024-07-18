@@ -4,7 +4,7 @@ use crate::io::CountingWriter;
 use crate::packed_r_tree::{Node, PackedRTreeWriter};
 use crate::{
     deserialize_from, serialize_into, serialized_size, Feature, FeatureLocation, Header,
-    PageHeader, Result,
+    PageHeader, Result, DEFAULT_PAGE_SIZE_GOAL,
 };
 use byteorder::{LittleEndian, WriteBytesExt};
 use std::fs::File;
@@ -25,10 +25,6 @@ pub struct Writer<W: Write> {
     /// after this limit is hit, so pages will be slightly larger than this size.
     page_size_goal: u64,
 }
-
-// How large should we make each page of feature data
-// before starting a new page.
-const DEFAULT_PAGE_SIZE_GOAL: u64 = 1024 * 64;
 
 impl<W: Write> Writer<W> {
     pub fn new(inner: W, is_compressed: bool) -> Result<Self> {

@@ -39,6 +39,10 @@ use tokio::io as asyncio;
 pub use crate::feature::{Feature, Properties, PropertyValue};
 use serde::{Deserialize, Serialize};
 
+// How large should we make each page of feature data
+// before starting a new page.
+pub(crate) const DEFAULT_PAGE_SIZE_GOAL: u64 = 1024 * 64;
+
 pub(crate) fn serialized_size<T>(value: &T) -> Result<u64>
 where
     T: serde::Serialize + ?Sized,

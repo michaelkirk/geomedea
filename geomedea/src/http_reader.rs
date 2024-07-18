@@ -573,7 +573,7 @@ impl Selection {
                 }
             }
         };
-        Box::pin(stream)
+        stream
     }
 
     async fn next_feature_buffer(
@@ -618,24 +618,24 @@ impl Selection {
     }
 }
 
-pub struct FeatureStream<'a> {
-    inner: Box<dyn Stream<Item = Result<Feature>> + Unpin + 'a>,
+pub struct FeatureStream {
+    inner: Box<dyn Stream<Item = Result<Feature>> + Unpin>,
 }
 
-impl<'a> FeatureStream<'a> {
-    fn new(stream: impl Stream<Item = Result<Bytes>> + Unpin + 'a) -> Self {
+impl FeatureStream {
+    fn new(stream: impl Stream<Item = Result<Bytes>> + 'static) -> Self {
         let inner = stream.map(move |feature_buffer| {
             let feature = deserialize_from::<_, Feature>(feature_buffer?.as_ref())?;
             // trace!("yielding feature: {feature:?}");
             Ok(feature)
         });
         Self {
-            inner: Box::new(inner),
+            inner: Box::new(Box::pin(inner)),
         }
     }
 }
 
-impl Stream for FeatureStream<'_> {
+impl Stream for FeatureStream {
     type Item = Result<Feature>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

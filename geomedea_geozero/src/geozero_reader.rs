@@ -170,7 +170,7 @@ mod processing {
 /// # }
 /// ```
 pub async fn process_features<W: FeatureProcessor>(
-    stream: &mut FeatureStream<'_>,
+    stream: &mut FeatureStream,
     out: &mut W,
 ) -> GeozeroResult<()> {
     out.dataset_begin(None)?;

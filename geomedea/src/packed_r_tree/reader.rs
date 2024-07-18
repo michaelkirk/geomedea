@@ -77,6 +77,7 @@ pub(crate) mod http {
     use crate::FeatureLocation;
     use crate::Result;
     use crate::{deserialize_from, Bounds};
+    use futures_util::Stream;
     use std::collections::VecDeque;
     use std::ops::Range;
     use streaming_http_range_client::{HttpClient, HttpRange};
@@ -101,97 +102,103 @@ pub(crate) mod http {
             }
         }
 
-        pub async fn select_bbox(&mut self, bbox: &Bounds) -> Result<Vec<FeatureLocation>> {
+        pub fn select_bbox(
+            &mut self,
+            bbox: &Bounds,
+        ) -> impl Stream<Item = Result<FeatureLocation>> {
             trace!("select_bbox {bbox:?}");
-            if self.tree.num_leaf_nodes == 0 {
-                return Ok(vec![]);
-            }
 
-            let mut results = vec![];
-            let mut queue = VecDeque::new();
-            queue.push_back(0..1);
+            let mut http_client = self.http_client.split_off();
+            let index_starting_byte = self.index_starting_byte;
+            let tree = self.tree.clone();
+            let bbox = bbox.clone();
 
-            while let Some(node_range) = queue.pop_front() {
-                let level = self.tree.level_for_node_idx(node_range.start);
-                trace!("next node_range {node_range:?} (level {level})");
-                for (node, node_idx) in self
-                    .read_node_range(node_range.clone())
-                    .await?
-                    .into_iter()
-                    .zip(node_range)
-                {
-                    if !node.bounds.intersects(bbox) {
-                        continue;
-                    }
-                    if self.tree.is_leaf_node(node_idx) {
-                        results.push(node.offset);
-                    } else if let Some(children) = self.tree.children_range(node_idx) {
-                        let Some(tail) = queue.back_mut() else {
-                            let level = self.tree.level_for_node_idx(children.start);
-                            debug!(
-                                "pushing children onto empty queue: {children:?} (level {level})"
-                            );
-                            queue.push_back(children);
-                            continue;
-                        };
+            async_stream::try_stream! {
+                if tree.num_leaf_nodes == 0 {
+                    return;
+                }
 
-                        let tail_level = self.tree.level_for_node_idx(tail.start);
-                        debug_assert_eq!(tail_level, self.tree.level_for_node_idx(tail.end));
+                let mut queue = VecDeque::new();
+                queue.push_back(0..1);
 
-                        let children_level = self.tree.level_for_node_idx(children.start);
-                        debug_assert_eq!(
-                            children_level,
-                            self.tree.level_for_node_idx(children.end - 1)
-                        );
-
-                        if tail_level != children_level {
-                            debug!("pushing new level {children_level} for children: {children:?}, since queue tail has level {tail_level}");
-                            queue.push_back(children);
+                while let Some(node_range) = queue.pop_front() {
+                    let level = tree.level_for_node_idx(node_range.start);
+                    trace!("next node_range {node_range:?} (level {level})");
+                    for (node, node_idx) in Self::read_node_range(&mut http_client, index_starting_byte, node_range.clone()).await?.into_iter().zip(node_range) {
+                        if !node.bounds.intersects(&bbox) {
                             continue;
                         }
+                        if tree.is_leaf_node(node_idx) {
+                            yield node.offset;
+                        } else if let Some(children) = tree.children_range(node_idx) {
+                            let Some(tail) = queue.back_mut() else {
+                                let level = tree.level_for_node_idx(children.start);
+                                debug!(
+                                    "pushing children onto empty queue: {children:?} (level {level})"
+                                );
+                                queue.push_back(children);
+                                continue;
+                            };
 
-                        // TODO: do something less arbitrary
-                        let combine_request_threshold = 16_000;
-                        let combine_request_node_threshold =
-                            combine_request_threshold / Node::serialized_size();
-                        if tail.end + combine_request_node_threshold as u64 > children.start {
-                            trace!("merging children: {children:?} with nearby existing range {tail:?}");
-                            debug_assert!(
-                                children.start >= tail.end,
-                                "Failed: {} > {}",
-                                children.start,
-                                tail.end
+                            let tail_level = tree.level_for_node_idx(tail.start);
+                            debug_assert_eq!(tail_level, tree.level_for_node_idx(tail.end));
+
+                            let children_level = tree.level_for_node_idx(children.start);
+                            debug_assert_eq!(
+                                children_level,
+                                tree.level_for_node_idx(children.end - 1)
                             );
-                            tail.end = children.end;
-                            continue;
-                        }
 
-                        debug!("pushing new node {children:?} range rather than merging with distance node range {tail:?}");
-                        queue.push_back(children);
+                            if tail_level != children_level {
+                                debug!("pushing new level {children_level} for children: {children:?}, since queue tail has level {tail_level}");
+                                queue.push_back(children);
+                                continue;
+                            }
+
+                            // TODO: do something less arbitrary
+                            let combine_request_threshold = 16_000;
+                            let combine_request_node_threshold =
+                                combine_request_threshold / Node::serialized_size();
+                            if tail.end + combine_request_node_threshold as u64 > children.start {
+                                trace!("merging children: {children:?} with nearby existing range {tail:?}");
+                                debug_assert!(
+                                    children.start >= tail.end,
+                                    "Failed: {} > {}",
+                                    children.start,
+                                    tail.end
+                                );
+                                tail.end = children.end;
+                                continue;
+                            }
+
+                            debug!("pushing new node {children:?} range rather than merging with distance node range {tail:?}");
+                            queue.push_back(children);
+                        }
                     }
                 }
             }
-
-            Ok(results)
         }
 
         pub(crate) fn into_http_client(self) -> HttpClient {
             self.http_client
         }
 
-        async fn read_node_range(&mut self, node_range: Range<u64>) -> Result<Vec<Node>> {
+        async fn read_node_range(
+            http_client: &mut HttpClient,
+            index_starting_byte: u64,
+            node_range: Range<u64>,
+        ) -> Result<Vec<Node>> {
             let start_byte =
-                self.index_starting_byte + node_range.start * Node::serialized_size() as u64;
-            let end_byte =
-                self.index_starting_byte + node_range.end * Node::serialized_size() as u64;
+                index_starting_byte + node_range.start * Node::serialized_size() as u64;
+            let end_byte = index_starting_byte + node_range.end * Node::serialized_size() as u64;
             let range = HttpRange::Range(start_byte..end_byte);
-            self.http_client.seek_to_range(range).await?;
+            http_client.seek_to_range(range).await?;
 
             let node_range_len = (node_range.end - node_range.start) as usize;
             let mut nodes = Vec::with_capacity(node_range_len);
             for _node_id in node_range {
                 let mut node_bytes = vec![0u8; Node::serialized_size()];
-                self.http_client.read_exact(&mut node_bytes).await?;
+                http_client.read_exact(&mut node_bytes).await?;
                 let node: Node = deserialize_from(&*node_bytes)?;
                 nodes.push(node)
             }
@@ -208,6 +215,7 @@ pub(crate) mod http {
         use super::super::tests::example_index;
         use crate::packed_r_tree::PackedRTreeHttpReader;
         use crate::{wkt, FeatureLocation};
+        use futures_util::StreamExt;
         use streaming_http_range_client::HttpClient;
 
         #[tokio::test]
@@ -219,10 +227,13 @@ pub(crate) mod http {
 
             // Search
             let mut reader = PackedRTreeHttpReader::new(4, http_client, 0);
-            let locations = reader
-                .select_bbox(&wkt!(RECT(0.5 0.5,0.75 0.75)))
-                .await
-                .unwrap();
+            let mut location_stream = Box::pin(reader.select_bbox(&wkt!(RECT(0.5 0.5,0.75 0.75))));
+
+            let mut locations = vec![];
+            while let Some(next) = location_stream.next().await.transpose().unwrap() {
+                locations.push(next);
+            }
+
             assert_eq!(
                 locations,
                 vec![FeatureLocation {
@@ -235,10 +246,12 @@ pub(crate) mod http {
             // avoid some dumb precondition of HttpClient
             http_client.set_range(0..1).await.unwrap();
             let mut reader = PackedRTreeHttpReader::new(4, http_client, 0);
-            let locations = reader
-                .select_bbox(&wkt!(RECT(1.5 1.5,2.0 2.0)))
-                .await
-                .unwrap();
+            let mut location_stream = Box::pin(reader.select_bbox(&wkt!(RECT(1.5 1.5,2.0 2.0))));
+
+            let mut locations = vec![];
+            while let Some(next) = location_stream.next().await.transpose().unwrap() {
+                locations.push(next);
+            }
             assert_eq!(
                 locations,
                 vec![

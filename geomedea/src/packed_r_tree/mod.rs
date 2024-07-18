@@ -54,6 +54,7 @@ impl Node {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct PackedRTree {
     num_leaf_nodes: u64,
     node_ranges_by_level: OnceCell<Vec<Range<u64>>>,

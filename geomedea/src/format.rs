@@ -16,8 +16,10 @@ pub(crate) struct PageHeader {
     encoded_page_length: u32,
 
     /// The number of bytes after decompression. This is the number of bytes that will be
-    /// read from the page to decode the features.k
+    /// read from the page to decode the features.
     decoded_page_length: u32,
+
+    /// How many features are in this page.
     feature_count: u32,
 }
 

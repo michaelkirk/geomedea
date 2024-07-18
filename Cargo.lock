@@ -1554,9 +1554,9 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "streaming-http-range-client"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c66ff5fba23ab8761b13d09408a99a1de5699bafa10725549031f642dda5f37d"
+checksum = "c36485450d6c5dce07e80f19435ceab2c8c581f58582cf38f0f0d93f9efd585d"
 dependencies = [
  "async-stream",
  "async-trait",

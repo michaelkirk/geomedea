@@ -5,8 +5,6 @@ mod bounds;
 mod error;
 mod feature;
 mod geometry;
-#[cfg(feature = "writer")]
-mod hilbert;
 mod http_reader;
 pub use http_reader::{FeatureStream, HttpReader};
 mod format;

@@ -77,8 +77,7 @@ impl HttpReader {
 
         let select_all = SelectAll::new(features_count);
         let stream = Selection::SelectAll(select_all)
-            .into_feature_buffer_stream(self.header.is_compressed, http_client)
-            .await?;
+            .into_feature_buffer_stream(self.header.is_compressed, http_client);
         Ok(FeatureStream::new(stream))
     }
 
@@ -101,8 +100,7 @@ impl HttpReader {
 
         let select_bbox = SelectBbox::new(feature_start, Box::new(feature_locations.into_iter()));
         let stream = Selection::SelectBbox(select_bbox)
-            .into_feature_buffer_stream(self.header.is_compressed, http_client)
-            .await?;
+            .into_feature_buffer_stream(self.header.is_compressed, http_client);
         Ok(FeatureStream::new(stream))
     }
 
@@ -559,11 +557,11 @@ enum Selection {
 }
 
 impl Selection {
-    pub async fn into_feature_buffer_stream(
+    pub fn into_feature_buffer_stream(
         mut self,
         is_compressed: bool,
         http_client: HttpClient,
-    ) -> Result<impl Stream<Item = Result<Bytes>>> {
+    ) -> impl Stream<Item = Result<Bytes>> {
         let mut page_reader = AsyncPageReader::new(is_compressed, http_client);
         let stream = async_stream::try_stream! {
             loop {
@@ -575,7 +573,7 @@ impl Selection {
                 }
             }
         };
-        Ok(Box::pin(stream))
+        stream
     }
 
     async fn next_feature_buffer(
@@ -614,31 +612,30 @@ impl Selection {
         let feature_len = u64::from_le_bytes(len_bytes);
 
         let mut feature_buffer = BytesMut::zeroed(feature_len as usize);
-        // Error is on this next line:
         page_reader.read_exact(&mut feature_buffer).await?;
 
         Ok(Some(feature_buffer.freeze()))
     }
 }
 
-pub struct FeatureStream<'a> {
-    inner: Box<dyn Stream<Item = Result<Feature>> + Unpin + 'a>,
+pub struct FeatureStream {
+    inner: Box<dyn Stream<Item = Result<Feature>> + Unpin>,
 }
 
-impl<'a> FeatureStream<'a> {
-    fn new(stream: impl Stream<Item = Result<Bytes>> + Unpin + 'a) -> Self {
+impl FeatureStream {
+    fn new(stream: impl Stream<Item = Result<Bytes>> + 'static) -> Self {
         let inner = stream.map(move |feature_buffer| {
             let feature = deserialize_from::<_, Feature>(feature_buffer?.as_ref())?;
             // trace!("yielding feature: {feature:?}");
             Ok(feature)
         });
         Self {
-            inner: Box::new(inner),
+            inner: Box::new(Box::pin(inner)),
         }
     }
 }
 
-impl Stream for FeatureStream<'_> {
+impl Stream for FeatureStream {
     type Item = Result<Feature>;
 
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {

@@ -85,9 +85,8 @@ impl HttpReader {
 }
 
 struct FeatureCollection(geojson::FeatureCollection);
-#[wasm_bindgen]
 impl FeatureCollection {
-    async fn new(mut feature_stream: FeatureStream<'_>) -> geomedea::Result<Self> {
+    async fn new(mut feature_stream: FeatureStream) -> geomedea::Result<Self> {
         let mut geojson_feature_collection = geojson::FeatureCollection {
             bbox: None,
             features: vec![],

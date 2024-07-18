@@ -114,8 +114,12 @@ pub(crate) mod http {
             while let Some(node_range) = queue.pop_front() {
                 let level = self.tree.level_for_node_idx(node_range.start);
                 trace!("next node_range {node_range:?} (level {level})");
-                // REVIEW: why return node_idx? Can't we infer it from node_range?
-                for (node_idx, node) in self.read_node_range(node_range).await? {
+                for (node, node_idx) in self
+                    .read_node_range(node_range.clone())
+                    .await?
+                    .into_iter()
+                    .zip(node_range)
+                {
                     if !node.bounds.intersects(bbox) {
                         continue;
                     }
@@ -175,7 +179,7 @@ pub(crate) mod http {
             self.http_client
         }
 
-        async fn read_node_range(&mut self, node_range: Range<u64>) -> Result<Vec<(u64, Node)>> {
+        async fn read_node_range(&mut self, node_range: Range<u64>) -> Result<Vec<Node>> {
             let start_byte =
                 self.index_starting_byte + node_range.start * Node::serialized_size() as u64;
             let end_byte =
@@ -185,11 +189,11 @@ pub(crate) mod http {
 
             let node_range_len = (node_range.end - node_range.start) as usize;
             let mut nodes = Vec::with_capacity(node_range_len);
-            for node_id in node_range {
+            for _node_id in node_range {
                 let mut node_bytes = vec![0u8; Node::serialized_size()];
                 self.http_client.read_exact(&mut node_bytes).await?;
                 let node: Node = deserialize_from(&*node_bytes)?;
-                nodes.push((node_id, node))
+                nodes.push(node)
             }
 
             Ok(nodes)

@@ -26,6 +26,10 @@ pub struct Writer<W: Write> {
     page_size_goal: u64,
 }
 
+// How large should we make each page of feature data
+// before starting a new page.
+const DEFAULT_PAGE_SIZE_GOAL: u64 = 1024 * 64;
+
 impl<W: Write> Writer<W> {
     pub fn new(inner: W, is_compressed: bool) -> Result<Self> {
         let header = Header {
@@ -39,7 +43,7 @@ impl<W: Write> Writer<W> {
             feature_entries: vec![],
             extent: Bounds::empty(),
             header,
-            page_size_goal: 1024 * 64, // REVIEW: what should default limit be?
+            page_size_goal: DEFAULT_PAGE_SIZE_GOAL,
         })
     }
 

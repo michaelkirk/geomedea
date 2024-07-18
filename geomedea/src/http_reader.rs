@@ -614,7 +614,6 @@ impl Selection {
         let feature_len = u64::from_le_bytes(len_bytes);
 
         let mut feature_buffer = BytesMut::zeroed(feature_len as usize);
-        // Error is on this next line:
         page_reader.read_exact(&mut feature_buffer).await?;
 
         Ok(Some(feature_buffer.freeze()))

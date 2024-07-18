@@ -77,8 +77,7 @@ impl HttpReader {
 
         let select_all = SelectAll::new(features_count);
         let stream = Selection::SelectAll(select_all)
-            .into_feature_buffer_stream(self.header.is_compressed, http_client)
-            .await?;
+            .into_feature_buffer_stream(self.header.is_compressed, http_client);
         Ok(FeatureStream::new(stream))
     }
 
@@ -101,8 +100,7 @@ impl HttpReader {
 
         let select_bbox = SelectBbox::new(feature_start, Box::new(feature_locations.into_iter()));
         let stream = Selection::SelectBbox(select_bbox)
-            .into_feature_buffer_stream(self.header.is_compressed, http_client)
-            .await?;
+            .into_feature_buffer_stream(self.header.is_compressed, http_client);
         Ok(FeatureStream::new(stream))
     }
 
@@ -559,11 +557,11 @@ enum Selection {
 }
 
 impl Selection {
-    pub async fn into_feature_buffer_stream(
+    pub fn into_feature_buffer_stream(
         mut self,
         is_compressed: bool,
         http_client: HttpClient,
-    ) -> Result<impl Stream<Item = Result<Bytes>>> {
+    ) -> impl Stream<Item = Result<Bytes>> {
         let mut page_reader = AsyncPageReader::new(is_compressed, http_client);
         let stream = async_stream::try_stream! {
             loop {
@@ -575,7 +573,7 @@ impl Selection {
                 }
             }
         };
-        Ok(Box::pin(stream))
+        Box::pin(stream)
     }
 
     async fn next_feature_buffer(

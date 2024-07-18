@@ -3,7 +3,7 @@ use crate::geometry::Bounded;
 use crate::io::CountingWriter;
 use crate::packed_r_tree::{Node, PackedRTreeWriter};
 use crate::{
-    deserialize_from, hilbert, serialize_into, serialized_size, Feature, FeatureLocation, Header,
+    deserialize_from, serialize_into, serialized_size, Feature, FeatureLocation, Header,
     PageHeader, Result,
 };
 use byteorder::{LittleEndian, WriteBytesExt};
@@ -11,6 +11,8 @@ use std::fs::File;
 use std::io::{BufReader, BufWriter, Read, Seek, SeekFrom, Write};
 use std::marker::PhantomData;
 use tempfile::tempfile;
+
+mod hilbert;
 
 #[derive(Debug)]
 pub struct Writer<W: Write> {

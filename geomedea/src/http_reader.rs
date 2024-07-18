@@ -93,12 +93,12 @@ impl HttpReader {
 
         let mut index_reader =
             PackedRTreeHttpReader::new(feature_count, http_client, index_starting_offset);
-        let feature_locations = index_reader.select_bbox(bounds).await?;
+        let feature_locations = index_reader.select_bbox(bounds);
         let feature_start = index_starting_offset + index_reader.tree().index_size();
         let http_client = index_reader.into_http_client();
-        debug!("feature_locations: {feature_locations:?}");
+        // debug!("feature_locations: {feature_locations:?}");
 
-        let select_bbox = SelectBbox::new(feature_start, Box::new(feature_locations.into_iter()));
+        let select_bbox = SelectBbox::new(feature_start, feature_locations);
         let stream = Selection::SelectBbox(select_bbox)
             .into_feature_buffer_stream(self.header.is_compressed, http_client);
         Ok(FeatureStream::new(stream))
@@ -118,16 +118,16 @@ struct SelectAll {
 
 struct SelectBbox {
     feature_start: u64,
-    feature_locations: Box<dyn Iterator<Item = FeatureLocation>>,
+    feature_locations: Box<dyn Stream<Item = Result<FeatureLocation>> + Unpin>,
 }
 
 impl SelectBbox {
     fn new(
         feature_start: u64,
-        feature_locations: Box<dyn Iterator<Item = FeatureLocation>>,
+        feature_locations: impl Stream<Item = Result<FeatureLocation>> + 'static,
     ) -> Self {
         Self {
-            feature_locations,
+            feature_locations: Box::new(Box::pin(feature_locations)),
             feature_start,
         }
     }
@@ -563,7 +563,7 @@ impl Selection {
         http_client: HttpClient,
     ) -> impl Stream<Item = Result<Bytes>> {
         let mut page_reader = AsyncPageReader::new(is_compressed, http_client);
-        let stream = async_stream::try_stream! {
+        async_stream::try_stream! {
             loop {
                 match self.next_feature_buffer(&mut page_reader).await? {
                     None => break,
@@ -572,8 +572,7 @@ impl Selection {
                     }
                 }
             }
-        };
-        stream
+        }
     }
 
     async fn next_feature_buffer(
@@ -597,7 +596,8 @@ impl Selection {
                 select_all.features_left_in_document -= 1;
             }
             Selection::SelectBbox(select_bbox) => {
-                let Some(next_location) = select_bbox.feature_locations.next() else {
+                let Some(next_location) = select_bbox.feature_locations.next().await.transpose()?
+                else {
                     return Ok(None);
                 };
 

@@ -1,82 +1,38 @@
 /* tslint:disable */
 /* eslint-disable */
-/**
-*/
 export function setup_logging(): void;
 /**
-*/
+ * The `ReadableStreamType` enum.
+ *
+ * *This API requires the following crate features to be activated: `ReadableStreamType`*
+ */
+type ReadableStreamType = "bytes";
 export class HttpReader {
   free(): void;
-/**
-* @param {string} url
-*/
   constructor(url: string);
-/**
-* @returns {Promise<any>}
-*/
   select_all(): Promise<any>;
-/**
-* @param {number} top
-* @param {number} right
-* @param {number} bottom
-* @param {number} left
-* @returns {Promise<any>}
-*/
   select_bbox(top: number, right: number, bottom: number, left: number): Promise<any>;
 }
-/**
-*/
 export class IntoUnderlyingByteSource {
+  private constructor();
   free(): void;
-/**
-* @param {ReadableByteStreamController} controller
-*/
   start(controller: ReadableByteStreamController): void;
-/**
-* @param {ReadableByteStreamController} controller
-* @returns {Promise<any>}
-*/
   pull(controller: ReadableByteStreamController): Promise<any>;
-/**
-*/
   cancel(): void;
-/**
-*/
+  readonly type: ReadableStreamType;
   readonly autoAllocateChunkSize: number;
-/**
-*/
-  readonly type: string;
 }
-/**
-*/
 export class IntoUnderlyingSink {
+  private constructor();
   free(): void;
-/**
-* @param {any} chunk
-* @returns {Promise<any>}
-*/
   write(chunk: any): Promise<any>;
-/**
-* @returns {Promise<any>}
-*/
   close(): Promise<any>;
-/**
-* @param {any} reason
-* @returns {Promise<any>}
-*/
   abort(reason: any): Promise<any>;
 }
-/**
-*/
 export class IntoUnderlyingSource {
+  private constructor();
   free(): void;
-/**
-* @param {ReadableStreamDefaultController} controller
-* @returns {Promise<any>}
-*/
   pull(controller: ReadableStreamDefaultController): Promise<any>;
-/**
-*/
   cancel(): void;
 }
 
@@ -87,29 +43,30 @@ export interface InitOutput {
   readonly setup_logging: () => void;
   readonly __wbg_httpreader_free: (a: number, b: number) => void;
   readonly httpreader_new: (a: number, b: number) => number;
-  readonly httpreader_select_all: (a: number) => number;
-  readonly httpreader_select_bbox: (a: number, b: number, c: number, d: number, e: number) => number;
-  readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
-  readonly intounderlyingsink_write: (a: number, b: number) => number;
-  readonly intounderlyingsink_close: (a: number) => number;
-  readonly intounderlyingsink_abort: (a: number, b: number) => number;
+  readonly httpreader_select_all: (a: number) => any;
+  readonly httpreader_select_bbox: (a: number, b: number, c: number, d: number, e: number) => any;
   readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
-  readonly intounderlyingsource_pull: (a: number, b: number) => number;
+  readonly intounderlyingsource_pull: (a: number, b: any) => any;
   readonly intounderlyingsource_cancel: (a: number) => void;
+  readonly __wbg_intounderlyingsink_free: (a: number, b: number) => void;
+  readonly intounderlyingsink_write: (a: number, b: any) => any;
+  readonly intounderlyingsink_close: (a: number) => any;
+  readonly intounderlyingsink_abort: (a: number, b: any) => any;
   readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
-  readonly intounderlyingbytesource_type: (a: number, b: number) => void;
+  readonly intounderlyingbytesource_type: (a: number) => number;
   readonly intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
-  readonly intounderlyingbytesource_start: (a: number, b: number) => void;
-  readonly intounderlyingbytesource_pull: (a: number, b: number) => number;
+  readonly intounderlyingbytesource_start: (a: number, b: any) => void;
+  readonly intounderlyingbytesource_pull: (a: number, b: any) => any;
   readonly intounderlyingbytesource_cancel: (a: number) => void;
+  readonly __wbindgen_exn_store: (a: number) => void;
+  readonly __externref_table_alloc: () => number;
+  readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
-  readonly __wbindgen_export_2: WebAssembly.Table;
-  readonly _dyn_core__ops__function__FnMut__A____Output___R_as_wasm_bindgen__closure__WasmClosure___describe__invoke__h139506c88bdf33a7: (a: number, b: number, c: number) => void;
-  readonly __wbindgen_exn_store: (a: number) => void;
-  readonly __wbindgen_add_to_stack_pointer: (a: number) => number;
-  readonly __wbindgen_free: (a: number, b: number, c: number) => void;
-  readonly wasm_bindgen__convert__closures__invoke2_mut__h97183d96270ce9ff: (a: number, b: number, c: number, d: number) => void;
+  readonly __wbindgen_export_5: WebAssembly.Table;
+  readonly closure290_externref_shim: (a: number, b: number, c: any) => void;
+  readonly closure302_externref_shim: (a: number, b: number, c: any, d: any) => void;
+  readonly __wbindgen_start: () => void;
 }
 
 export type SyncInitInput = BufferSource | WebAssembly.Module;

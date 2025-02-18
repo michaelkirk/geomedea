@@ -2,6 +2,8 @@
 
 🚨 This project is in an experimental state, but it shows some promise.
 
+See the [online demo](https://michaelkirk.github.io/geomedea/examples/maplibre/filtered.html) for a quick example of what geomedea can do.
+
 ## Quickstart
 
 Since the format is still undergoing major changes, there is currently only one client. It's written in rust.

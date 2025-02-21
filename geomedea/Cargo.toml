@@ -34,7 +34,7 @@ bytes = { version = "1.5.0", default-features = false }
 byteorder = "1.5.0"
 async-compression = { version = "0.4.4", default-features = false, features = ["futures-io", "tokio"], git = "https://github.com/michaelkirk/async-compression", branch = "mkirk/external-decoder" }
 async-trait = "0.1.74"
-ruzstd = {  version = "0.7.0", git = "https://github.com/michaelkirk/zstd-rs", branch = "mkirk/fix-incremental-reads" }
+ruzstd = "0.7.0"
 
 [dev-dependencies]
 geomedea_geozero = { path = "../geomedea_geozero", default-features = false }

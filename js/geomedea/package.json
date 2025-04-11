@@ -1,5 +1,5 @@
 {
-  "name": "geomedea-wasm",
+  "name": "geomedea",
   "type": "module",
   "collaborators": [
     "Michael Kirk <michael.code@endoftheworl.de>"

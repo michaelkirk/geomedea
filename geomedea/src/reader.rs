@@ -4,7 +4,7 @@ use crate::{
     deserialize_from, serialized_size, Bounds, Error, Feature, FeatureLocation, Header, PageHeader,
     Result,
 };
-use ruzstd::{FrameDecoder, StreamingDecoder as ZstdDecoder};
+use ruzstd::{decoding::FrameDecoder, decoding::StreamingDecoder as ZstdDecoder};
 use std::io::{Read, Take};
 use std::marker::PhantomData;
 

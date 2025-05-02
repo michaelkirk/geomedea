@@ -20,11 +20,6 @@ mod log_stubs {
 }
 
 #[wasm_bindgen]
-extern "C" {
-    fn alert(s: &str);
-}
-
-#[wasm_bindgen]
 pub fn setup_logging() {
     #[cfg(feature = "logging")]
     if let Err(e) = console_log::init_with_level(log::Level::Info) {

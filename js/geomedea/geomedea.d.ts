@@ -45,6 +45,12 @@ export interface InitOutput {
   readonly httpreader_new: (a: number, b: number) => number;
   readonly httpreader_select_all: (a: number) => any;
   readonly httpreader_select_bbox: (a: number, b: number, c: number, d: number, e: number) => any;
+  readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
+  readonly intounderlyingbytesource_type: (a: number) => number;
+  readonly intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
+  readonly intounderlyingbytesource_start: (a: number, b: any) => void;
+  readonly intounderlyingbytesource_pull: (a: number, b: any) => any;
+  readonly intounderlyingbytesource_cancel: (a: number) => void;
   readonly __wbg_intounderlyingsource_free: (a: number, b: number) => void;
   readonly intounderlyingsource_pull: (a: number, b: any) => any;
   readonly intounderlyingsource_cancel: (a: number) => void;
@@ -52,20 +58,14 @@ export interface InitOutput {
   readonly intounderlyingsink_write: (a: number, b: any) => any;
   readonly intounderlyingsink_close: (a: number) => any;
   readonly intounderlyingsink_abort: (a: number, b: any) => any;
-  readonly __wbg_intounderlyingbytesource_free: (a: number, b: number) => void;
-  readonly intounderlyingbytesource_type: (a: number) => number;
-  readonly intounderlyingbytesource_autoAllocateChunkSize: (a: number) => number;
-  readonly intounderlyingbytesource_start: (a: number, b: any) => void;
-  readonly intounderlyingbytesource_pull: (a: number, b: any) => any;
-  readonly intounderlyingbytesource_cancel: (a: number) => void;
   readonly __wbindgen_exn_store: (a: number) => void;
   readonly __externref_table_alloc: () => number;
   readonly __wbindgen_export_2: WebAssembly.Table;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_export_5: WebAssembly.Table;
-  readonly closure287_externref_shim: (a: number, b: number, c: any) => void;
-  readonly closure299_externref_shim: (a: number, b: number, c: any, d: any) => void;
+  readonly closure300_externref_shim: (a: number, b: number, c: any) => void;
+  readonly closure312_externref_shim: (a: number, b: number, c: any, d: any) => void;
   readonly __wbindgen_start: () => void;
 }
 

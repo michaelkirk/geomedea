@@ -9,7 +9,8 @@ wasm-pack build \
     --release \
     . \
     --config 'profile.release.opt-level="z"' \
-    --config 'profile.release.lto=true'
+    --config 'profile.release.lto=true' \
+    --config 'profile.release.codegen-units=1' \
 
 ls -l pkg/geomedea_bg.wasm
 

@@ -6,6 +6,9 @@ mod error;
 mod feature;
 mod geometry;
 mod http_reader;
+
+use bincode::config::{Configuration, Fixint, LittleEndian};
+use bincode::enc::write::SizeWriter;
 pub use http_reader::{FeatureStream, HttpReader};
 mod format;
 pub mod inspector;
@@ -43,28 +46,46 @@ use serde::{Deserialize, Serialize};
 // before starting a new page.
 pub(crate) const DEFAULT_PAGE_SIZE_GOAL: u64 = 1024 * 64;
 
+// The new `standard()` encoding enables variable int encoding, so we stick with "legacy".
+//
+// Firstly, varints are unacceptable index nodes, which need to be a fixed size so we can
+// randomly seek to specific nodes without deserializing the entire index.
+// Secondly, though we could in theory use varint encoding for feature data, and it is significantly
+// space saving for uncompressed data, it's a much more modest space improvement when applying
+// generic (zstd) compression.
+static BINCODE_CONFIG: Configuration<LittleEndian, Fixint> = bincode::config::legacy();
+
 pub(crate) fn serialized_size<T>(value: &T) -> Result<u64>
 where
     T: serde::Serialize + ?Sized,
 {
-    Ok(bincode::serialized_size(value)?)
+    let mut size_writer = SizeWriter::default();
+    bincode::serde::encode_into_writer(value, &mut size_writer, BINCODE_CONFIG)?;
+    Ok(size_writer
+        .bytes_written
+        .try_into()
+        .expect("non-negative total size"))
 }
 
 #[cfg(feature = "writer")]
-pub(crate) fn serialize_into<W, T>(writer: W, value: &T) -> Result<()>
+pub(crate) fn serialize_into<W, T>(mut writer: W, value: &T) -> Result<()>
 where
     W: std::io::Write,
     T: serde::Serialize + ?Sized,
 {
-    Ok(bincode::serialize_into(writer, value)?)
+    let _write_len = bincode::serde::encode_into_std_write(value, &mut writer, BINCODE_CONFIG)?;
+    Ok(())
 }
 
-pub fn deserialize_from<R, T>(reader: R) -> Result<T>
+pub fn deserialize_from<R, T>(mut reader: R) -> Result<T>
 where
     R: std::io::Read,
     T: serde::de::DeserializeOwned,
 {
-    Ok(bincode::deserialize_from(reader)?)
+    Ok(bincode::serde::decode_from_std_read(
+        &mut reader,
+        BINCODE_CONFIG,
+    )?)
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]

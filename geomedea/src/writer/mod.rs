@@ -138,6 +138,7 @@ impl<W: Write> Writer<W> {
 trait PageEncoder<W: Write>: Write + Sized {
     fn new(inner: W) -> Result<Self>;
     fn total_bytes_in(&self) -> u64;
+    #[allow(unused)]
     fn total_bytes_out(&self) -> u64;
     fn finish(self) -> Result<CountingWriter<W>>;
 }

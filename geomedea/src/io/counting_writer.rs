@@ -20,6 +20,7 @@ impl<W: Write> CountingWriter<W> {
         self.total_bytes_written
     }
 
+    #[allow(unused)]
     pub fn inner(&self) -> &W {
         &self.inner
     }

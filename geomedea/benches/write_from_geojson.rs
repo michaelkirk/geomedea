@@ -1,7 +1,8 @@
-use criterion::{black_box, criterion_group, criterion_main, BatchSize, Criterion};
+use criterion::{criterion_group, criterion_main, BatchSize, Criterion};
 use geomedea_geozero::geozero::{geojson::GeoJsonReader, GeozeroDatasource};
 use geomedea_geozero::GeomedeaWriter as GeozeroWriter;
 use std::fs::File;
+use std::hint::black_box;
 use std::io::BufReader;
 
 fn write(mut geojson: GeoJsonReader<BufReader<File>>, is_compressed: bool) -> Vec<u8> {

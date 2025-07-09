@@ -683,7 +683,7 @@ mod tests {
         assert_relative_eq!(lnglat.lat_degrees(), -89.99999981438727, epsilon = 1e-7);
 
         if is_compressed {
-            assert_eq!(output.len(), 64928);
+            assert_eq!(output.len(), 64921);
         } else {
             assert_eq!(output.len(), 150188);
         }

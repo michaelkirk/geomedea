@@ -5,7 +5,7 @@ use async_compression::tokio::bufread::Decoder;
 use async_compression::{codec::Decode, util::PartialBuffer};
 use std::any::type_name;
 
-use ruzstd::FrameDecoder;
+use ruzstd::decoding::FrameDecoder;
 use std::fmt::{Debug, Formatter};
 
 use crate::asyncio::{AsyncRead, BufReader};
@@ -104,7 +104,7 @@ impl Decode for MyZstdFrameDecoder {
 
     fn flush(
         &mut self,
-        output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
+        _output: &mut PartialBuffer<impl AsRef<[u8]> + AsMut<[u8]>>,
     ) -> std::io::Result<bool> {
         error!("MyZstdFrameDecoder::flush not expected to be called");
         unimplemented!()
